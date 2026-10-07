@@ -1,0 +1,209 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+package net.msalt.axnotes.ui
+
+import android.Manifest
+import android.app.DatePickerDialog
+import android.app.TimePickerDialog
+import android.content.Intent
+import android.os.Build
+import android.provider.Settings
+import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.*
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import net.msalt.axnotes.R
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
+import net.msalt.axnotes.data.*
+import java.text.DateFormat
+import java.util.Calendar
+import java.util.Date
+
+@Composable
+fun AxApp(target: MutableStateFlow<String?>, vm: AxViewModel = viewModel()) {
+    val dark = isSystemInDarkTheme()
+    val scheme = if (dark) darkColorScheme(primary = Color(0xFFB3D5C3), background = Color(0xFF151D19), surface = Color(0xFF1E2922)) else lightColorScheme(primary = Color(0xFF315E50), background = Color(0xFFFAF8F0), surface = Color(0xFFF4F2E9), secondaryContainer = Color(0xFFDFE9DF))
+    MaterialTheme(colorScheme = scheme) {
+        val context = LocalContext.current
+        val lifecycle = LocalLifecycleOwner.current
+        val scope = rememberCoroutineScope()
+        val articles by vm.articles.collectAsStateWithLifecycle()
+        val feed by vm.feed.collectAsStateWithLifecycle()
+        val bookmarks by vm.bookmarks.collectAsStateWithLifecycle()
+        val memos by vm.memos.collectAsStateWithLifecycle()
+        val reminders by vm.reminders.collectAsStateWithLifecycle()
+        val busy by vm.busy.collectAsStateWithLifecycle()
+        val notificationEnabled by vm.notificationEnabled.collectAsStateWithLifecycle()
+        val sample by vm.sampleMode.collectAsStateWithLifecycle()
+        val query by vm.query.collectAsStateWithLifecycle()
+        val searchArticles by vm.searchArticles.collectAsStateWithLifecycle()
+        val searchMemos by vm.searchMemos.collectAsStateWithLifecycle()
+        val searching by vm.searching.collectAsStateWithLifecycle()
+        val incoming by target.collectAsStateWithLifecycle()
+        var screen by rememberSaveable { mutableStateOf("notes") }
+        var previous by rememberSaveable { mutableStateOf("notes") }
+        var selectedId by rememberSaveable { mutableStateOf("") }
+        var libraryType by rememberSaveable { mutableStateOf("북마크") }
+        var editorId by rememberSaveable { mutableStateOf<String?>(null) }
+        var editorDraftId by rememberSaveable { mutableStateOf(java.util.UUID.randomUUID().toString()) }
+        var editorTitle by rememberSaveable { mutableStateOf("") }
+        var editorBody by rememberSaveable { mutableStateOf("") }
+        var originalTitle by rememberSaveable { mutableStateOf("") }
+        var originalBody by rememberSaveable { mutableStateOf("") }
+        var editorReturn by rememberSaveable { mutableStateOf("articleMemos") }
+        var saving by remember { mutableStateOf(false) }
+        var confirmDiscard by rememberSaveable { mutableStateOf(false) }
+        var pendingTarget by rememberSaveable { mutableStateOf<String?>(null) }
+        var deleteMemo by remember { mutableStateOf<Memo?>(null) }
+        var confirmPersonal by remember { mutableStateOf(false) }
+        var confirmCache by remember { mutableStateOf(false) }
+        var reminderDialog by rememberSaveable { mutableStateOf(false) }
+        var reminderArticleId by rememberSaveable { mutableStateOf("") }
+        var dueAt by rememberSaveable { mutableLongStateOf(System.currentTimeMillis() + 3600000) }
+        var permissionArticle by rememberSaveable { mutableStateOf<String?>(null) }
+        var permissionDue by rememberSaveable { mutableLongStateOf(0) }
+        val snackbar = remember { SnackbarHostState() }
+        val message by vm.message.collectAsStateWithLifecycle()
+        fun hasUnsavedChanges() = screen == "editor" && (editorTitle != originalTitle || editorBody != originalBody)
+        fun openArticle(id: String) { previous = if(screen == "search" || screen == "library") screen else "notes"; selectedId = id; screen = "reader" }
+        fun back() { if(saving) return; if (hasUnsavedChanges()) confirmDiscard = true else screen = when(screen) { "editor" -> editorReturn; "articleMemos" -> "reader"; "reader" -> previous; else -> "notes" } }
+        fun edit(memo: Memo?) { editorDraftId = memo?.id ?: java.util.UUID.randomUUID().toString(); editorId = memo?.id; editorTitle = memo?.title.orEmpty(); editorBody = memo?.body.orEmpty(); originalTitle = editorTitle; originalBody = editorBody; if(memo != null) selectedId = memo.articleId; editorReturn = screen; screen = "editor" }
+        fun acceptTarget(value: String) { if(value == "library") { screen = "library"; libraryType = "읽기 알림" } else openArticle(value.removePrefix("article:")) }
+        val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { _ -> permissionArticle?.let { vm.schedule(it, permissionDue) }; permissionArticle = null }
+        LaunchedEffect(message) { message?.let { snackbar.showSnackbar(it); vm.message.value = null } }
+        LaunchedEffect(incoming, saving) { if(saving) return@LaunchedEffect; incoming?.let { if(hasUnsavedChanges()) { pendingTarget = it; confirmDiscard = true } else acceptTarget(it); target.value = null } }
+        LaunchedEffect(screen, selectedId) { if(screen == "reader" && selectedId.isNotBlank()) vm.load(selectedId) }
+        DisposableEffect(lifecycle) {
+            val observer = LifecycleEventObserver { _, event -> if(event == Lifecycle.Event.ON_RESUME) vm.onResume() }
+            lifecycle.lifecycle.addObserver(observer); vm.onResume()
+            onDispose { lifecycle.lifecycle.removeObserver(observer) }
+        }
+        BackHandler(screen != "notes") { back() }
+        Scaffold(
+            containerColor = scheme.background,
+            snackbarHost = { SnackbarHost(snackbar) },
+            topBar = { TopAppBar(title = { Text(when(screen) { "library" -> "내 보관함"; "search" -> "통합 검색"; "settings" -> "설정 및 소개"; "editor" -> if(editorId == null) "새 메모" else "메모 수정"; "articleMemos" -> "글에 남긴 메모"; "reader" -> "AX Notes"; else -> "AX Notes" }, fontWeight = FontWeight.SemiBold) },
+                navigationIcon = { if(screen !in listOf("notes", "library")) IconButton(onClick = { back() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "뒤로") } },
+                actions = { if(screen in listOf("notes", "library")) { IconButton(onClick = { previous = screen; screen = "search" }) { Icon(Icons.Default.Search, "검색") }; IconButton(onClick = { screen = "settings" }) { Icon(Icons.Default.Settings, "설정") } } },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = scheme.background)) },
+            bottomBar = { if(screen in listOf("notes", "library")) NavigationBar(containerColor = scheme.surface) { NavigationBarItem(selected = screen == "notes", onClick = { screen = "notes" }, icon = { Icon(painterResource(R.drawable.ic_article), null) }, label = { Text("Notes") }); NavigationBarItem(selected = screen == "library", onClick = { screen = "library" }, icon = { Icon(painterResource(R.drawable.ic_library), null) }, label = { Text("내 보관함") }) } }
+        ) { padding ->
+            Box(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)) {
+                when(screen) {
+                    "notes" -> LazyColumn(contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                        item { Text("읽고, 기록하고,\n다시 꺼내보는 AX", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold); Spacer(Modifier.height(12.dp)); Text("AI로 일하는 방식을 바꾸며 배우고 생각한 것들", style = MaterialTheme.typography.bodyMedium) }
+                        item { SourceBanner(sample, feed?.fetchedAt); Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) { Text("최신 Notes · ${articles.size}", fontWeight = FontWeight.SemiBold); TextButton(onClick = vm::refresh, enabled = !busy) { Text(if(busy) "갱신 중…" else "새로고침") } } }
+                        if(busy) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
+                        if(articles.isEmpty() && !busy) item { EmptyState("아직 내려받은 글이 없어요", "새로고침하거나 설정에서 내부 테스트용 샘플을 선택하세요") }
+                        items(articles, key = { it.id }) { article -> ArticleCard(article, bookmarks.any { it.articleId == article.id }) { openArticle(article.id) } }
+                    }
+                    "library" -> LazyColumn(contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        item { Text("나만의 읽기 공간", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold); Text("이 기기에만 저장됩니다", style = MaterialTheme.typography.bodySmall); Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) { listOf("북마크", "메모", "읽기 알림").forEach { name -> FilterChip(selected = libraryType == name, onClick = { libraryType = name }, label = { Text(name) }) } } }
+                        when(libraryType) {
+                            "북마크" -> { if(bookmarks.isEmpty()) item { EmptyState("저장한 글이 없어요", "글의 북마크 버튼으로 다시 읽을 글을 모으세요") }; items(bookmarks, key = { it.articleId }) { saved -> SavedCard(saved.titleSnapshot, if(articles.none { it.id == saved.articleId }) "목록에 없는 글 · 저장 당시 제목" else "북마크", { openArticle(saved.articleId) }) { TextButton(onClick = { vm.toggleBookmark(saved.articleId) }) { Text("해제") } } } }
+                            "메모" -> { if(memos.isEmpty()) item { EmptyState("남긴 메모가 없어요", "글을 열고 메모를 남겨보세요") }; items(memos, key = { it.id }) { memo -> MemoCard(memo, { edit(memo) }, { openArticle(memo.articleId) }, { deleteMemo = memo }) } }
+                            else -> {
+                                if(!notificationEnabled) item { Warning("알림이 차단되어 있어요. 일정은 남아 있지만 전달되지 않습니다"); TextButton(onClick = { context.startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)) }) { Text("알림 설정 열기") } }
+                                item { Text("예약 시각 이후 실행합니다. 절전·강제 종료 등으로 지연되거나 전달되지 않을 수 있어요", style = MaterialTheme.typography.bodySmall) }
+                                if(reminders.isEmpty()) item { EmptyState("읽기 일정이 없어요", "글에서 나중에 읽기 알림을 예약하세요") }
+                                items(reminders, key = { it.id }) { reminder -> SavedCard(reminder.titleSnapshot, "${formatTime(reminder.dueAt)} · ${reminderLabel(reminder.state)}", { openArticle(reminder.articleId) }) { Row { TextButton(onClick = { reminderArticleId = reminder.articleId; dueAt = maxOf(reminder.dueAt, System.currentTimeMillis() + 60000); reminderDialog = true }) { Text("변경") }; TextButton(onClick = { vm.cancelReminder(reminder.articleId) }) { Text("취소") } } } }
+                            }
+                        }
+                    }
+                    "search" -> Column(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
+                        OutlinedTextField(value = query, onValueChange = { vm.query.value = it.take(200); vm.searchLimit.value = 50 }, singleLine = true, modifier = Modifier.fillMaxWidth(), label = { Text("글과 메모에서 검색") }, leadingIcon = { Icon(Icons.Default.Search, null) }, trailingIcon = { if(query.isNotEmpty()) IconButton(onClick = { vm.query.value = "" }) { Icon(Icons.Default.Clear, "검색어 지우기") } })
+                        Text("내려받은 글의 제목·요약·본문과 메모를 기기 안에서만 검색합니다", style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(vertical = 12.dp))
+                        if(searching) LinearProgressIndicator(Modifier.fillMaxWidth())
+                        LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp), contentPadding = PaddingValues(bottom = 24.dp)) {
+                            if(query.isBlank()) item { EmptyState("기억나는 단어를 입력하세요", "한국어 일부 단어도 찾을 수 있어요") }
+                            else if(!searching && searchArticles.isEmpty() && searchMemos.isEmpty()) item { EmptyState("검색 결과가 없어요", "더 짧거나 다른 단어로 찾아보세요. 아직 받지 않은 본문은 검색되지 않아요") }
+                            if(searchArticles.isNotEmpty()) item { Text("글 · ${searchArticles.size}", fontWeight = FontWeight.Bold) }
+                            items(searchArticles, key = { "a:${it.id}" }) { article -> ArticleCard(article, bookmarks.any { it.articleId == article.id }) { openArticle(article.id) } }
+                            if(searchMemos.isNotEmpty()) item { Text("메모 · ${searchMemos.size}", fontWeight = FontWeight.Bold) }
+                            items(searchMemos, key = { "m:${it.id}" }) { memo -> MemoCard(memo, { edit(memo) }, { openArticle(memo.articleId) }, { deleteMemo = memo }) }
+                            if(searchArticles.size >= vm.searchLimit.value || searchMemos.size >= vm.searchLimit.value) item { TextButton(onClick = { vm.searchLimit.value += 50 }) { Text("결과 더 보기") } }
+                        }
+                    }
+                    "reader" -> {
+                        val articleFlow = remember(selectedId) { vm.article(selectedId) }
+                        val article by articleFlow.collectAsStateWithLifecycle(null)
+                        val fallbackTitle = bookmarks.find { it.articleId == selectedId }?.titleSnapshot ?: memos.find { it.articleId == selectedId }?.titleSnapshot ?: reminders.find { it.articleId == selectedId }?.titleSnapshot ?: "글"
+                        val fallbackUrl = bookmarks.find { it.articleId == selectedId }?.urlSnapshot ?: memos.find { it.articleId == selectedId }?.urlSnapshot ?: reminders.find { it.articleId == selectedId }?.urlSnapshot
+                        Column(Modifier.fillMaxSize()) {
+                            Row(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                TextButton(onClick = { vm.toggleBookmark(selectedId) }) { Icon(painterResource(if(bookmarks.any { it.articleId == selectedId }) R.drawable.ic_bookmark else R.drawable.ic_bookmark_outline), null); Text("저장") }
+                                TextButton(onClick = { screen = "articleMemos" }) { Icon(painterResource(R.drawable.ic_memo), null); Text("메모") }
+                                TextButton(onClick = { reminderArticleId = selectedId; dueAt = reminders.find { it.articleId == selectedId && it.state in listOf("scheduled", "blocked") }?.dueAt ?: (System.currentTimeMillis() + 3600000); reminderDialog = true }) { Icon(painterResource(R.drawable.ic_reminder), null); Text("읽기 알림") }
+                                TextButton(onClick = { (article?.canonicalUrl ?: fallbackUrl)?.let { shareArticle(context, article?.title ?: fallbackTitle, it) { vm.message.value = it } } }) { Text("공유") }
+                                TextButton(onClick = { (article?.canonicalUrl ?: fallbackUrl)?.let { openExternal(context, it) { vm.message.value = it } } }) { Text("원문") }
+                                article?.projectUrl?.let { url -> TextButton(onClick = { openExternal(context, url) { vm.message.value = it } }) { Text("Project") } }
+                                (feed?.aboutUrl ?: "https://ax.msalt.net/about/").let { url -> TextButton(onClick = { openExternal(context, url) { vm.message.value = it } }) { Text("작성자") } }
+                            }
+                            if(article?.available == false || article == null) Warning("원문을 현재 목록에서 찾을 수 없어요. 저장한 메모와 북마크는 유지됩니다")
+                            if(article?.cachedRevision != null && article?.cachedRevision != article?.wantedRevision) Warning("이전에 저장한 본문입니다. 새 버전 다운로드를 다시 시도하세요")
+                            if(article?.bodyHtml != null) ReaderWebView(article!!, dark, Modifier.weight(1f)) { vm.message.value = it }
+                            else { Column(Modifier.padding(24.dp)) { Text(article?.title ?: fallbackTitle, style = MaterialTheme.typography.headlineMedium); Spacer(Modifier.height(24.dp)); EmptyState("본문을 아직 받지 못했어요", "인터넷에 연결하고 다시 시도하세요. 개인 메모는 계속 볼 수 있어요"); Button(onClick = { vm.load(selectedId); if(article == null) vm.refresh() }, modifier = Modifier.padding(top = 12.dp)) { Text("다시 시도") } } }
+                        }
+                    }
+                    "articleMemos" -> LazyColumn(contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        item { Button(onClick = { edit(null) }) { Icon(Icons.Default.Add, null); Text("새 메모") } }
+                        val selectedMemos = memos.filter { it.articleId == selectedId }
+                        if(selectedMemos.isEmpty()) item { EmptyState("이 글의 첫 생각을 남겨보세요", "북마크와 별개로 여러 메모를 저장할 수 있어요") }
+                        items(selectedMemos, key = { it.id }) { memo -> MemoCard(memo, { edit(memo) }, { screen = "reader" }, { deleteMemo = memo }) }
+                    }
+                    "editor" -> Column(Modifier.fillMaxSize().imePadding().padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text("글에 연결된 메모 · 이 기기에만 저장", style = MaterialTheme.typography.labelMedium)
+                        OutlinedTextField(editorTitle, { editorTitle = it.take(500) }, label = { Text("제목 (선택)") }, modifier = Modifier.fillMaxWidth(), singleLine = true, enabled = !saving)
+                        OutlinedTextField(editorBody, { editorBody = it.take(100000) }, label = { Text("기억할 생각이나 적용할 아이디어") }, modifier = Modifier.fillMaxWidth().weight(1f), enabled = !saving)
+                        Button(onClick = { saving = true; scope.launch { try { vm.saveMemo(editorId, selectedId, editorTitle, editorBody, editorDraftId); screen = editorReturn; originalTitle = editorTitle; originalBody = editorBody } catch(e: Exception) { if(e is kotlinx.coroutines.CancellationException) throw e; vm.message.value = e.message ?: "저장하지 못했습니다" } finally { saving = false } } }, enabled = !saving && editorBody.isNotBlank(), modifier = Modifier.fillMaxWidth()) { Text(if(saving) "저장 중…" else "메모 저장") }
+                    }
+                    "settings" -> LazyColumn(contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
+                        item { Text("AX Notes", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold); Text("0.1.0 · 내부 테스트\n읽고, 직접 해보고, 만드는 과정을 함께 따라가는 AX 채널") }
+                        item { TextButton(onClick = { openExternal(context, feed?.aboutUrl ?: "https://ax.msalt.net/about/") { vm.message.value = it } }) { Text("${feed?.authorName ?: "AX Notes"} 소개") }; feed?.let { f -> val channels = org.json.JSONArray(f.channelsJson); for(i in 0 until channels.length()) { val channel = channels.getJSONObject(i); TextButton(onClick = { openExternal(context, channel.getString("url")) { vm.message.value = it } }) { Text(channel.getString("label")) } } } }
+                        item { HorizontalDivider(); Text("콘텐츠 연결", style = MaterialTheme.typography.titleMedium); Row(verticalAlignment = Alignment.CenterVertically) { Column(Modifier.weight(1f)) { Text("내부 테스트용 샘플"); Text("로컬 웹 빌드에서 가져온 스냅샷입니다. 실제 서비스 갱신이 아닙니다", style = MaterialTheme.typography.bodySmall) }; Switch(sample, onCheckedChange = { vm.switchSample(it) }, enabled = !busy) }; Text("실제 주소: https://ax.msalt.net\n새 JSON 피드 배포 전에는 실제 연결이 실패할 수 있습니다", style = MaterialTheme.typography.bodySmall) }
+                        item { HorizontalDivider(); Text("알림", style = MaterialTheme.typography.titleMedium); Text(if(notificationEnabled) "알림 사용 가능" else "알림 차단됨 · 일정은 보관함에 유지"); TextButton(onClick = { context.startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)) }) { Text("시스템 알림 설정") } }
+                        item { HorizontalDivider(); Text("기기 안의 데이터", style = MaterialTheme.typography.titleMedium); Text("계정·백업·동기화·내보내기가 없습니다. 앱 삭제·데이터 초기화·기기 변경 때 북마크, 메모, 알림을 잃을 수 있으며 복구할 수 없습니다. 자동 클라우드 백업과 기기 이전에서 제외하도록 구성했습니다."); Text("메모와 검색어는 서버로 보내지 않습니다. 본문 이미지와 외부 링크에는 인터넷이 사용되며 외부 사이트의 정책이 적용됩니다.", style = MaterialTheme.typography.bodySmall) }
+                        item { OutlinedButton(onClick = { confirmCache = true }, enabled = !busy) { Text("콘텐츠 캐시만 삭제") }; TextButton(onClick = { confirmPersonal = true }, colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)) { Text("개인 데이터 전체 삭제") } }
+                    }
+                }
+            }
+        }
+        if(confirmDiscard) AlertDialog(onDismissRequest = { confirmDiscard = false; pendingTarget = null }, title = { Text("저장하지 않은 메모가 있어요") }, text = { Text("나가면 이번 변경을 잃습니다") }, confirmButton = { TextButton(onClick = { confirmDiscard = false; val destination = pendingTarget; pendingTarget = null; if(destination != null) acceptTarget(destination) else screen = editorReturn }) { Text("변경 버리고 나가기") } }, dismissButton = { TextButton(onClick = { confirmDiscard = false; pendingTarget = null }) { Text("계속 작성") } })
+        deleteMemo?.let { memo -> AlertDialog(onDismissRequest = { deleteMemo = null }, title = { Text("메모를 삭제할까요?") }, text = { Text("삭제한 메모는 복구할 수 없습니다. 글 북마크는 유지됩니다") }, confirmButton = { TextButton(onClick = { vm.deleteMemo(memo.id); deleteMemo = null }) { Text("삭제") } }, dismissButton = { TextButton(onClick = { deleteMemo = null }) { Text("취소") } }) }
+        if(confirmCache) AlertDialog(onDismissRequest = { confirmCache = false }, title = { Text("콘텐츠 캐시를 지울까요?") }, text = { Text("다운로드한 글만 지웁니다. 메모·북마크·읽기 알림은 남습니다. 다시 받으려면 새로고침하세요") }, confirmButton = { TextButton(onClick = { vm.clearCache(); confirmCache = false }) { Text("캐시 삭제") } }, dismissButton = { TextButton(onClick = { confirmCache = false }) { Text("취소") } })
+        if(confirmPersonal) AlertDialog(onDismissRequest = { confirmPersonal = false }, title = { Text("개인 데이터를 모두 삭제할까요?") }, text = { Text("북마크·메모·읽기 알림을 모두 지우고 예약을 취소합니다. 백업이 없어 복구할 수 없습니다") }, confirmButton = { TextButton(onClick = { vm.clearPersonal(); confirmPersonal = false }) { Text("모두 삭제") } }, dismissButton = { TextButton(onClick = { confirmPersonal = false }) { Text("취소") } })
+        if(reminderDialog) AlertDialog(onDismissRequest = { reminderDialog = false }, title = { Text("나중에 읽기") }, text = { Column(verticalArrangement = Arrangement.spacedBy(12.dp)) { Text(formatTime(dueAt)); OutlinedButton(onClick = { val c = Calendar.getInstance().apply { timeInMillis = dueAt }; DatePickerDialog(context, { _, year, month, day -> c.set(Calendar.YEAR, year); c.set(Calendar.MONTH, month); c.set(Calendar.DAY_OF_MONTH, day); dueAt = c.timeInMillis }, c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH)).apply { datePicker.minDate = System.currentTimeMillis(); show() } }) { Text("날짜 선택") }; OutlinedButton(onClick = { val c = Calendar.getInstance().apply { timeInMillis = dueAt }; TimePickerDialog(context, { _, hour, minute -> c.set(Calendar.HOUR_OF_DAY, hour); c.set(Calendar.MINUTE, minute); c.set(Calendar.SECOND, 0); c.set(Calendar.MILLISECOND, 0); dueAt = c.timeInMillis }, c.get(Calendar.HOUR_OF_DAY), c.get(Calendar.MINUTE), true).show() }) { Text("시각 선택") }; Text("정확한 시각을 보장하지 않아요. 절전·OS 제한으로 늦어지거나 전달되지 않을 수 있습니다", style = MaterialTheme.typography.bodySmall) } }, confirmButton = { TextButton(onClick = { if(dueAt <= System.currentTimeMillis()) { vm.message.value = "미래 시각을 선택하세요" } else { reminderDialog = false; if(Build.VERSION.SDK_INT >= 33 && context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) { permissionArticle = reminderArticleId; permissionDue = dueAt; permission.launch(Manifest.permission.POST_NOTIFICATIONS) } else vm.schedule(reminderArticleId, dueAt) } }) { Text("예약") } }, dismissButton = { TextButton(onClick = { reminderDialog = false }) { Text("취소") } })
+    }
+}
+
+@Composable private fun SourceBanner(sample: Boolean, updated: Long?) { Surface(color = MaterialTheme.colorScheme.secondaryContainer, shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth()) { Column(Modifier.padding(12.dp)) { Text(if(sample) "내부 테스트용 콘텐츠 스냅샷" else "AX Notes 웹 콘텐츠", style = MaterialTheme.typography.labelLarge); Text(updated?.let { "마지막 갱신 ${formatTime(it)}" } ?: "아직 갱신되지 않았습니다", style = MaterialTheme.typography.bodySmall) } } }
+@Composable private fun EmptyState(title: String, subtitle: String) { Column(Modifier.padding(vertical = 20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) { Text(title, style = MaterialTheme.typography.titleMedium); Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) } }
+@Composable private fun Warning(text: String) { Surface(color = MaterialTheme.colorScheme.tertiaryContainer) { Text(text, modifier = Modifier.fillMaxWidth().padding(12.dp), style = MaterialTheme.typography.bodySmall) } }
+@Composable private fun ArticleCard(article: Article, saved: Boolean, onClick: () -> Unit) { Card(onClick = onClick, modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) { Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) { Row { Text(article.publishedAt.take(10), style = MaterialTheme.typography.labelMedium, modifier = Modifier.weight(1f)); if(saved) Icon(painterResource(R.drawable.ic_bookmark), "북마크됨", Modifier.size(18.dp)) }; Text(article.title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold); Text(article.description, maxLines = 3, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodyMedium); Text(if(!article.available) "공개 목록에서 삭제됨" else if(article.bodyHtml != null) "오프라인 읽기 가능" else "본문 다운로드 필요", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary) } } }
+@Composable private fun SavedCard(title: String, subtitle: String, onClick: () -> Unit, actions: @Composable () -> Unit) { Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) { Column(Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 8.dp)) { Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold); Text(subtitle, style = MaterialTheme.typography.bodySmall) }; actions() } } }
+@Composable private fun MemoCard(memo: Memo, onEdit: () -> Unit, onArticle: () -> Unit, onDelete: () -> Unit) { SavedCard(memo.title.ifBlank { "제목 없는 메모" }, memo.body.take(180), onEdit) { Text("연결된 글 · ${memo.titleSnapshot}", style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(top = 8.dp)); Row { TextButton(onClick = onArticle) { Text("글 읽기") }; TextButton(onClick = onEdit) { Text("수정") }; TextButton(onClick = onDelete) { Text("삭제") } } } }
+private fun formatTime(time: Long) = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(time))
+private fun reminderLabel(state: String) = when(state) { "scheduled" -> "예정"; "blocked" -> "알림 차단됨"; "delivered" -> "알림 전송 · 아직 열지 않음"; "opened" -> "열어봄"; else -> "전송 확인 중" }

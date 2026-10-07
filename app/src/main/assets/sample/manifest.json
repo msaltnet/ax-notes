@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-07T09:21:39.118Z",
+  "author": {
+    "name": "AX Notes",
+    "aboutUrl": "https://ax.msalt.net/about/",
+    "channels": []
+  },
+  "notes": [
+    {
+      "id": "ax-notes-app-requirements-first",
+      "title": "AX Notes 앱도 만들어볼까?",
+      "description": "Codex와 README, PRD, TRD까지 정리했다. 코드는 아직 없고, 이제 dots에 개발을 맡겨보려고 한다.",
+      "publishedAt": "2026-10-07",
+      "updatedAt": null,
+      "canonicalUrl": "https://ax.msalt.net/notes/ax-notes-app-requirements-first/",
+      "collectionId": "ax-notes-app",
+      "projectUrl": "https://ax.msalt.net/series/ax-notes-app/",
+      "detailUrl": "https://ax.msalt.net/app/v1/notes/ax-notes-app-requirements-first/c90f7eb7a94d6a74221534b96dd5f129ae90c02849d697a85964075115ef286c.json",
+      "revision": "c90f7eb7a94d6a74221534b96dd5f129ae90c02849d697a85964075115ef286c"
+    },
+    {
+      "id": "first-vibe-coding",
+      "title": "첫 바이브 코딩의 추억",
+      "description": "생각보다 빠른것 같지도, 생각보다 느린것 같지도 않네요. 처음 그 때도 이럴 것 같았어요.",
+      "publishedAt": "2026-10-07",
+      "updatedAt": null,
+      "canonicalUrl": "https://ax.msalt.net/notes/first-vibe-coding/",
+      "collectionId": "vibe-coding-workflow",
+      "projectUrl": null,
+      "detailUrl": "https://ax.msalt.net/app/v1/notes/first-vibe-coding/07426c5587fa25cdf1754737a41d7a7c0dcc58720d0583facc7afb4d8a51c25c.json",
+      "revision": "07426c5587fa25cdf1754737a41d7a7c0dcc58720d0583facc7afb4d8a51c25c"
+    },
+    {
+      "id": "free-llm-apis",
+      "title": "무료로 OpenAI API 사용하기! 꿀팁!",
+      "description": "무료 LLM API를 비교하고, OpenAI에 데이터를 공유하는 대신 하루 250만 토큰을 받는 꿀팁을 소개합니다. 물론 조건은 있습니다.",
+      "publishedAt": "2026-10-06",
+      "updatedAt": null,
+      "canonicalUrl": "https://ax.msalt.net/notes/free-llm-apis/",
+      "collectionId": null,
+      "projectUrl": null,
+      "detailUrl": "https://ax.msalt.net/app/v1/notes/free-llm-apis/b50262769905ef295ec96f08bd0e24fb688025f9d9a57060e8a76097ebdf2ebc.json",
+      "revision": "b50262769905ef295ec96f08bd0e24fb688025f9d9a57060e8a76097ebdf2ebc"
+    },
+    {
+      "id": "free-cloud-compute-for-agents",
+      "title": "무료 클라우드 컴퓨타 사용하기!",
+      "description": "클라우드에 챗봇 하나씩은 다들 돌리고 계시죠? 요즘 워낙 다양한 상용 서비스가 있어서 딱히 직접 돌릴 필요를 못 느끼시는 분들도 계시지만...nanobot 같은 개인용 Agent를 상시 운영할 때 유용한 무료 VM과 호스팅 서비스를 소개합니다.",
+      "publishedAt": "2026-09-30",
+      "updatedAt": null,
+      "canonicalUrl": "https://ax.msalt.net/notes/free-cloud-compute-for-agents/",
+      "collectionId": null,
+      "projectUrl": null,
+      "detailUrl": "https://ax.msalt.net/app/v1/notes/free-cloud-compute-for-agents/e4306317501b2c72daad0e4e3a1861ede1ae6069e3cab892fe2d8ce63be3a6d5.json",
+      "revision": "e4306317501b2c72daad0e4e3a1861ede1ae6069e3cab892fe2d8ce63be3a6d5"
+    },
+    {
+      "id": "nanobot-telegram",
+      "title": "Telegram 연결 - 봇과 상견례",
+      "description": "nanobot과 대화는 했지만 이거 맞아?",
+      "publishedAt": "2025-01-20",
+      "updatedAt": null,
+      "canonicalUrl": "https://ax.msalt.net/notes/nanobot-telegram/",
+      "collectionId": "nanobot",
+      "projectUrl": "https://ax.msalt.net/series/nanobot/",
+      "detailUrl": "https://ax.msalt.net/app/v1/notes/nanobot-telegram/7c364839e2c11bae9e098d527adfaeefd58f250b5c0a980982f37d5e450df203.json",
+      "revision": "7c364839e2c11bae9e098d527adfaeefd58f250b5c0a980982f37d5e450df203"
+    },
+    {
+      "id": "nanobot-ubuntu-setup",
+      "title": "Ubuntu, Python 3.11, nanobot 설치",
+      "description": "시작을 위한 시스템 셋업",
+      "publishedAt": "2025-01-10",
+      "updatedAt": null,
+      "canonicalUrl": "https://ax.msalt.net/notes/nanobot-ubuntu-setup/",
+      "collectionId": "nanobot",
+      "projectUrl": "https://ax.msalt.net/series/nanobot/",
+      "detailUrl": "https://ax.msalt.net/app/v1/notes/nanobot-ubuntu-setup/da7cc2e482f33579c651551e93747c989088282cb1076f596d674a8fc94d4224.json",
+      "revision": "da7cc2e482f33579c651551e93747c989088282cb1076f596d674a8fc94d4224"
+    },
+    {
+      "id": "nanobot-requirements-first",
+      "title": "openclaw도 요구 사항부터",
+      "description": "무엇을 만들지 정하는 일이 구현보다 먼저",
+      "publishedAt": "2025-01-05",
+      "updatedAt": null,
+      "canonicalUrl": "https://ax.msalt.net/notes/nanobot-requirements-first/",
+      "collectionId": "nanobot",
+      "projectUrl": "https://ax.msalt.net/series/nanobot/",
+      "detailUrl": "https://ax.msalt.net/app/v1/notes/nanobot-requirements-first/01a6dd19acaeefc0d721e392125fff130e18f92af7cbfb03efcc3eb68cf76230.json",
+      "revision": "01a6dd19acaeefc0d721e392125fff130e18f92af7cbfb03efcc3eb68cf76230"
+    },
+    {
+      "id": "nanobot-bot-selection",
+      "title": "나의 선택 - nanobot on rpi",
+      "description": "openclaw, nanoclaw, picoclaw... 그리고 nanobot",
+      "publishedAt": "2025-01-01",
+      "updatedAt": null,
+      "canonicalUrl": "https://ax.msalt.net/notes/nanobot-bot-selection/",
+      "collectionId": "nanobot",
+      "projectUrl": "https://ax.msalt.net/series/nanobot/",
+      "detailUrl": "https://ax.msalt.net/app/v1/notes/nanobot-bot-selection/f9e81b625819b4bd49e9cbf6810e85bb1afeb25ec6940a478734e9e53b1d8059.json",
+      "revision": "f9e81b625819b4bd49e9cbf6810e85bb1afeb25ec6940a478734e9e53b1d8059"
+    }
+  ]
+}

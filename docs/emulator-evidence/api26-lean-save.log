@@ -1,0 +1,5 @@
+PASS api26-lean-07-saved-memo Cloud emulator test memo persistence
+MEMO_SAVED
+PASS api26-lean-10-bookmarks 저장한 글이 없어요
+PASS api26-lean-11-library-memo Cloud emulator test memo persistence
+UNBOOKMARK_KEEPS_MEMO

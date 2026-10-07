@@ -42,7 +42,7 @@ MVP 이후에는 Labs 소개와 실행 진입점을 추가합니다.
 
 ## 현재 상태
 
-**기획 시작.** 이 저장소는 README로 프로젝트 방향을 정리한 초기 상태이며, 앱 코드는 아직 없습니다.
+**MVP 내부 테스트 후보.** Android 앱, 정적 JSON 연동, 로컬 저장·검색·알림과 테스트가 구현되었습니다. APK 빌드·52개 JVM/Robolectric 테스트·lint를 통과했습니다. 에뮬레이터와 실기기 확인 범위는 [검증 보고서](docs/TEST_REPORT.md)를 확인하세요. 실기기 검증을 완료한 정식 출시판은 아닙니다.
 
 확정한 MVP 방향:
 
@@ -61,3 +61,17 @@ MVP 이후에는 Labs 소개와 실행 진입점을 추가합니다.
 - [TRD — 기술 요구사항](docs/TRD.md): Android 구성, 웹 콘텐츠 계약, 로컬 저장·검색·알림
 
 두 문서는 검토용 초안이며, 확정 사항과 설계 제안을 구분합니다.
+
+## Android 개발
+
+- `app/`: 새로 추가한 Android 앱 모듈 (Kotlin, Compose, Room, WorkManager)
+- 최소 API 26, compile/target API 35, JDK 17 이상
+- Android SDK 설치 후 `local.properties`에 SDK 경로를 설정하거나 ANDROID_HOME을 지정합니다
+- `./gradlew testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest`
+- 내부 APK: `app/build/outputs/apk/debug/app-debug.apk`
+- 내부 테스트 applicationId: `net.msalt.axnotes.internal`
+- 기본 내부 빌드는 검증된 웹 콘텐츠 스냅샷을 사용합니다. 설정에서 실제 웹 JSON 연결로 전환할 수 있습니다
+- 앱을 삭제하거나 데이터를 초기화하면 개인 기록을 복구할 수 없습니다
+- SDK·Gradle 캐시, 빌드 산출물과 서명 키를 저장소에 넣지 않습니다
+
+구현 결정: [계획](docs/IMPLEMENTATION_PLAN.md), [개발 과정 기록](docs/DECISION_LOG.md), [검증 결과](docs/TEST_REPORT.md)
