@@ -1,0 +1,9 @@
+PASS api26-lean-14-persisted-memo Cloud emulator test memo persistence
+PROCESS_RELAUNCH_PRESERVES_MEMO
+PASS api26-lean-16-memo-search Cloud emulator test memo persistence
+MEMO_LOCAL_SEARCH_PASSED
+PASS api26-lean-21-cache-confirm 콘텐츠 캐시를 지울까요?
+PASS api26-lean-23-empty-cache 아직 내려받은 글이 없어요
+PASS api26-lean-25-preserved-bookmark AX Notes 앱도 만들어볼까?
+PASS api26-lean-26-preserved-memo Cloud emulator test memo persistence
+CACHE_CLEAR_PRESERVES_BOOKMARK_AND_MEMO
