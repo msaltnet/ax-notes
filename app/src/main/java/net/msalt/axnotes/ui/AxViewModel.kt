@@ -73,7 +73,8 @@ class AxViewModel(app: Application) : AndroidViewModel(app) {
         busy.value = true
         viewModelScope.launch {
             try {
-                repository.clear()
+                // Refresh transactionally; a failed connection must not erase the
+                // previous readable cache or any personal data.
                 graph.sampleMode = value; sampleMode.value = value; repository = graph.content()
                 val failed = repository.refresh()
                 if (failed > 0) message.value = "본문 ${failed}개는 다시 받아야 합니다"

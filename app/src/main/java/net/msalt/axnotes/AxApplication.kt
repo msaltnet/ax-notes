@@ -15,8 +15,15 @@ class AppGraph(private val context: Context) {
     val personal = PersonalRepository(contentDb.dao(), personalDb)
     val scheduler = ReminderScheduler(context, personalDb)
     private val settings = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
+    init {
+        // Move the first internal build to the live feed without deleting cached
+        // articles or private records. Later explicit sample choices are respected.
+        if (!settings.getBoolean("liveFeedDefaultV2", false)) {
+            settings.edit().putBoolean("sample", false).putBoolean("liveFeedDefaultV2", true).apply()
+        }
+    }
     var sampleMode: Boolean
-        get() = settings.getBoolean("sample", BuildConfig.DEBUG)
+        get() = settings.getBoolean("sample", false)
         set(value) { settings.edit().putBoolean("sample", value).apply() }
     fun content(): ContentRepository = ContentRepository(contentDb,
         if (sampleMode) SampleFeedSource(context, BuildConfig.MANIFEST_URL) else HttpFeedSource(), BuildConfig.MANIFEST_URL, sampleMode)

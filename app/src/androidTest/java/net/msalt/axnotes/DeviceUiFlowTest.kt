@@ -10,7 +10,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 @RunWith(AndroidJUnit4::class)
 class DeviceUiFlowTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
-    private fun waitForNotes() { compose.waitUntil(15000) { compose.onAllNodesWithText("AX Notes 앱도 만들어볼까?").fetchSemanticsNodes().isNotEmpty() } }
+    private fun waitForNotes() { compose.waitUntil(60000) { compose.onAllNodesWithText("AX Notes 앱도 만들어볼까?").fetchSemanticsNodes().isNotEmpty() } }
     @Test fun repeatedNavigationReturnsToStableNotesAndLibrary() {
         waitForNotes()
         repeat(3) {
@@ -36,7 +36,7 @@ class DeviceUiFlowTest {
     }
     @Test fun searchHasEmptyGuidanceAndLiteralNoResultState() {
         waitForNotes()
-        compose.onNodeWithContentDescription("검색").performClick()
+        compose.onNode(hasContentDescription("검색") or hasTestTag("nav_search")).performClick()
         compose.onNodeWithText("기억나는 단어를 입력하세요").assertExists()
         compose.onNodeWithText("글과 메모에서 검색").performTextInput("qzx%_'123987")
         compose.waitUntil(10000) { compose.onAllNodesWithText("검색 결과가 없어요").fetchSemanticsNodes().isNotEmpty() }
