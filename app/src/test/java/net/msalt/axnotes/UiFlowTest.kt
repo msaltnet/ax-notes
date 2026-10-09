@@ -20,6 +20,9 @@ import org.robolectric.annotation.LooperMode
 class UiFlowTest {
     @get:Rule(order = 0) val work = object : ExternalResource() {
         override fun before() {
+            ApplicationProvider.getApplicationContext<android.content.Context>()
+                .getSharedPreferences("settings", android.content.Context.MODE_PRIVATE).edit()
+                .putBoolean("sample", true).putBoolean("liveFeedDefaultV2", true).commit()
             WorkManagerTestInitHelper.initializeTestWorkManager(ApplicationProvider.getApplicationContext(), Configuration.Builder().setExecutor(SynchronousExecutor()).build())
         }
         override fun after() { WorkManagerTestInitHelper.closeWorkDatabase() }

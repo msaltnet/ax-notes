@@ -9,6 +9,8 @@ import android.widget.TextView
 import android.net.Uri
 import android.webkit.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import net.msalt.axnotes.data.Article
@@ -28,14 +30,17 @@ fun shareArticle(context: Context, title: String, url: String, onError: (String)
 @Composable
 fun ReaderWebView(article: Article, dark: Boolean, modifier: Modifier = Modifier, onError: (String) -> Unit) {
     val currentError by rememberUpdatedState(onError)
+    var scrollFraction by rememberSaveable(article.id) { mutableFloatStateOf(0f) }
+    val fontScale = LocalDensity.current.fontScale
     val escapedTitle = Jsoup.parse("").createElement("span").text(article.title).html()
     val color = if (dark) "#e8e5da" else "#222c28"
     val background = if (dark) "#151d19" else "#faf8f0"
     val html = remember(article.id, article.cachedRevision, dark) {
         """<!doctype html><html lang="ko"><head><meta name="viewport" content="width=device-width, initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src https:; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'"><style>
-        body{margin:0;padding:20px 22px 52px;background:$background;color:$color;font-family:system-ui,sans-serif;font-size:18px;line-height:1.85;overflow-wrap:anywhere} h1{font-size:29px;line-height:1.45;margin-top:6px}h2{font-size:24px;margin-top:2em}h3{font-size:21px}a{color:${if(dark) "#a7d7be" else "#315e50"}}img{max-width:100%;height:auto}pre{overflow-x:auto;white-space:pre;overflow-wrap:normal;background:${if(dark) "#25382d" else "#eeeee4"};padding:16px;border-radius:8px;font-size:14px}code{font-family:monospace}table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;font-size:15px}td,th{border:1px solid #999;padding:9px}blockquote{border-left:3px solid #8ea99b;padding-left:16px;margin:20px 0}figure{margin:20px 0}figcaption{font-size:14px;opacity:.75}.meta{font-size:13px;opacity:.65}
+        html{height:100%}body{box-sizing:border-box;max-width:764px;margin:0 auto;padding:24px 22px 64px;padding:24px clamp(18px,4vw,32px) 64px;background:$background;color:$color;font-family:system-ui,sans-serif;font-size:18px;line-height:1.85;overflow-wrap:break-word;overflow-wrap:anywhere} h1{font-size:29px;line-height:1.45;margin-top:6px}h2{font-size:24px;margin-top:2em}h3{font-size:21px}a{color:${if(dark) "#a7d7be" else "#315e50"}}img{max-width:100%;height:auto}pre{overflow-x:auto;white-space:pre;overflow-wrap:normal;background:${if(dark) "#25382d" else "#eeeee4"};padding:16px;border-radius:8px;font-size:14px}code{font-family:monospace}table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;font-size:15px}td,th{border:1px solid #999;padding:9px}blockquote{border-left:3px solid #8ea99b;padding-left:16px;margin:20px 0}figure{margin:20px 0}figcaption{font-size:14px;opacity:.75}.meta{font-size:13px;opacity:.65}
         </style></head><body><div class="meta">AX NOTES · ${article.publishedAt.take(10)}</div><h1>$escapedTitle</h1>${article.bodyHtml.orEmpty()}</body></html>"""
     }
+    key(article.id) {
     AndroidView(modifier = modifier, factory = { context ->
         FrameLayout(context).apply {
             try {
@@ -48,7 +53,22 @@ fun ReaderWebView(article: Article, dark: Boolean, modifier: Modifier = Modifier
             settings.textZoom = (resources.configuration.fontScale * 100).toInt().coerceAtLeast(1)
             setBackgroundColor(android.graphics.Color.parseColor(background))
             CookieManager.getInstance().setAcceptThirdPartyCookies(this, false)
+            var restoringPosition = true
+            setOnScrollChangeListener { _, _, y, _, _ ->
+                val range = (contentHeight * resources.displayMetrics.density - height).coerceAtLeast(1f)
+                if (!restoringPosition) scrollFraction = (y / range).coerceIn(0f, 1f)
+            }
             webViewClient = object : WebViewClient() {
+                override fun onPageStarted(view: WebView?, url: String?, favicon: android.graphics.Bitmap?) { restoringPosition = true }
+                override fun onPageFinished(view: WebView, url: String?) {
+                    // Restore relative reading position after rotation/reflow; never execute JavaScript.
+                    val restore = scrollFraction
+                    view.post {
+                        val range = (view.contentHeight * view.resources.displayMetrics.density - view.height).coerceAtLeast(0f)
+                        view.scrollTo(0, (range * restore).toInt())
+                        restoringPosition = false
+                    }
+                }
                 override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
                     val url = request?.url?.toString().orEmpty()
                     if (request?.isForMainFrame == true && SafeUrl.https(url)) openExternal(context, url, currentError)
@@ -76,9 +96,12 @@ fun ReaderWebView(article: Article, dark: Boolean, modifier: Modifier = Modifier
         }
     }, onRelease = { container ->
         val view = container.getChildAt(0) as? WebView
+        view?.setOnScrollChangeListener(null)
         container.removeAllViews()
         view?.let { it.stopLoading(); it.webViewClient = WebViewClient(); it.removeAllViews(); it.destroy() }
     }, update = { container ->
+        container.setBackgroundColor(android.graphics.Color.parseColor(background))
+        (container.getChildAt(0) as? WebView)?.settings?.textZoom = (fontScale * 100).toInt().coerceAtLeast(1)
         val identity = "${article.id}:${article.cachedRevision}:$dark"
         if (container.tag != identity) {
             container.tag = identity
@@ -88,4 +111,5 @@ fun ReaderWebView(article: Article, dark: Boolean, modifier: Modifier = Modifier
                 "시스템 WebView를 사용할 수 없어 텍스트로 표시합니다. 이미지·서식은 시스템 WebView를 활성화한 뒤 확인하세요.\n\n${article.title}\n${article.publishedAt.take(10)}\n\n${article.bodyText.orEmpty()}"
         }
     })
+    }
 }

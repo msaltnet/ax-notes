@@ -42,7 +42,7 @@ MVP 이후에는 Labs 소개와 실행 진입점을 추가합니다.
 
 ## 현재 상태
 
-**MVP 내부 테스트 후보.** Android 앱, 정적 JSON 연동, 로컬 저장·검색·알림과 테스트가 구현되었습니다. APK 빌드·52개 JVM/Robolectric 테스트·lint를 통과했습니다. 에뮬레이터와 실기기 확인 범위는 [검증 보고서](docs/TEST_REPORT.md)를 확인하세요. 실기기 검증을 완료한 정식 출시판은 아닙니다.
+**MVP 내부 테스트 후보.** Android 앱, 정적 JSON 연동, 로컬 저장·검색·알림과 테스트가 구현되었습니다. 0.2.0 APK 빌드·69개 JVM/Robolectric 테스트·lint를 통과했습니다. [이번 내부 후보의 변경·설치 주의·검증](docs/RELEASE_0.2.0.md)을 먼저 확인하세요. 에뮬레이터와 실기기 확인 범위는 [검증 보고서](docs/TEST_REPORT.md)를 확인하세요. 실기기 검증을 완료한 정식 출시판은 아닙니다.
 
 확정한 MVP 방향:
 
@@ -70,7 +70,8 @@ MVP 이후에는 Labs 소개와 실행 진입점을 추가합니다.
 - `./gradlew testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest`
 - 내부 APK: `app/build/outputs/apk/debug/app-debug.apk`
 - 내부 테스트 applicationId: `net.msalt.axnotes.internal`
-- 기본 내부 빌드는 검증된 웹 콘텐츠 스냅샷을 사용합니다. 설정에서 실제 웹 JSON 연결로 전환할 수 있습니다
+- 내부 빌드도 실제 웹 JSON 피드가 기본입니다. 0.2.0에서 이전 샘플 설정을 한 번 실제 피드로 전환하며 개인 기록과 콘텐츠 캐시는 지우지 않습니다. 설정에서 샘플을 명시적으로 선택할 수 있습니다.
+- 창 너비에 따라 하단 탐색·탐색 레일·목록/본문 분할 화면을 사용합니다. [태블릿 설계](docs/ADAPTIVE_DESIGN.md)를 확인하세요.
 - 앱을 삭제하거나 데이터를 초기화하면 개인 기록을 복구할 수 없습니다
 - SDK·Gradle 캐시, 빌드 산출물과 서명 키를 저장소에 넣지 않습니다
 
