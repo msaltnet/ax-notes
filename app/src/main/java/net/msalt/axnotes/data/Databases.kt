@@ -1,6 +1,8 @@
 package net.msalt.axnotes.data
 
 import androidx.room.*
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import kotlinx.coroutines.flow.Flow
 
 @Entity(tableName = "articles")
@@ -9,7 +11,9 @@ data class Article(
     val publishedAt: String, val updatedAt: String?, val canonicalUrl: String,
     val detailUrl: String, val wantedRevision: String, val projectUrl: String?,
     val cachedRevision: String? = null, val bodyHtml: String? = null, val bodyText: String? = null,
-    val cachedAt: Long? = null, val available: Boolean = true
+    val cachedAt: Long? = null, val available: Boolean = true,
+    val projectId: String? = null, val projectTitle: String? = null, val projectOrder: Int? = null,
+    val seriesId: String? = null, val seriesTitle: String? = null, val seriesOrder: Int? = null
 )
 @Entity(tableName = "feed")
 data class FeedState(@PrimaryKey val key: Int = 1, val fetchedAt: Long, val authorName: String, val aboutUrl: String, val channelsJson: String, val sample: Boolean)
@@ -30,8 +34,23 @@ interface ContentDao {
     @Query("DELETE FROM articles") suspend fun clearArticles()
     @Query("DELETE FROM feed") suspend fun clearFeed()
 }
-@Database(entities = [Article::class, FeedState::class], version = 1, exportSchema = true)
-abstract class ContentDatabase : RoomDatabase() { abstract fun dao(): ContentDao }
+@Database(entities = [Article::class, FeedState::class], version = 2, exportSchema = true)
+abstract class ContentDatabase : RoomDatabase() {
+    abstract fun dao(): ContentDao
+    companion object {
+        /** Optional editorial taxonomy must never invalidate an existing offline cache. */
+        val MIGRATION_1_2: Migration = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE articles ADD COLUMN projectId TEXT")
+                db.execSQL("ALTER TABLE articles ADD COLUMN projectTitle TEXT")
+                db.execSQL("ALTER TABLE articles ADD COLUMN projectOrder INTEGER")
+                db.execSQL("ALTER TABLE articles ADD COLUMN seriesId TEXT")
+                db.execSQL("ALTER TABLE articles ADD COLUMN seriesTitle TEXT")
+                db.execSQL("ALTER TABLE articles ADD COLUMN seriesOrder INTEGER")
+            }
+        }
+    }
+}
 
 @Entity(tableName = "bookmarks")
 data class Bookmark(@PrimaryKey val articleId: String, val titleSnapshot: String, val urlSnapshot: String, val createdAt: Long)

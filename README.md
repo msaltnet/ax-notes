@@ -62,6 +62,10 @@ MVP 이후에는 Labs 소개와 실행 진입점을 추가합니다.
 
 두 문서는 검토용 초안이며, 확정 사항과 설계 제안을 구분합니다.
 
+## 0.3.0 피드백 반영
+
+[변경·검증 범위](docs/RELEASE_0.3.0.md) · [디자인 시스템](docs/DESIGN_SYSTEM.md). 시리즈·프로젝트 탐색은 웹 피드의 분류 메타데이터가 게시된 뒤 제공됩니다.
+
 ## Android 개발
 
 - `app/`: 새로 추가한 Android 앱 모듈 (Kotlin, Compose, Room, WorkManager)

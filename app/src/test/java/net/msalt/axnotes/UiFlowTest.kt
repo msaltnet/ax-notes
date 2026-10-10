@@ -22,7 +22,7 @@ class UiFlowTest {
         override fun before() {
             ApplicationProvider.getApplicationContext<android.content.Context>()
                 .getSharedPreferences("settings", android.content.Context.MODE_PRIVATE).edit()
-                .putBoolean("sample", true).putBoolean("liveFeedDefaultV2", true).commit()
+                .putBoolean("sample", true).putBoolean("liveFeedDefaultV3", true).commit()
             WorkManagerTestInitHelper.initializeTestWorkManager(ApplicationProvider.getApplicationContext(), Configuration.Builder().setExecutor(SynchronousExecutor()).build())
         }
         override fun after() { WorkManagerTestInitHelper.closeWorkDatabase() }
@@ -32,9 +32,9 @@ class UiFlowTest {
     @Test fun repeatedNavigationReturnsToStableNotesAndLibrary() {
         waitForNotes()
         repeat(3) {
-            compose.onNodeWithText("내 보관함").performClick()
+            compose.onNodeWithContentDescription("내 보관함").performClick()
             compose.onNodeWithText("나만의 읽기 공간").assertExists()
-            compose.onNodeWithText("Notes").performClick()
+            compose.onNodeWithContentDescription("Notes").performClick()
             compose.onNodeWithText("AX Notes 앱도 만들어볼까?").assertExists()
         }
     }
