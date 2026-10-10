@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
@@ -27,7 +26,7 @@ internal fun NotesScreen(
     onCollection: (String, String?) -> Unit, onRefresh: () -> Unit, onArticle: (String) -> Unit
 ) {
     NotesRefreshBox(isRefreshing = busy, onRefresh = onRefresh) {
-        LazyColumn(state = scrollState, modifier = Modifier.fillMaxSize().testTag("notes_list"), contentPadding = PaddingValues(AxSpacing.xl), verticalArrangement = Arrangement.spacedBy(AxSpacing.lg)) {
+        LazyColumn(state = scrollState, modifier = Modifier.fillMaxSize().testTag("notes_list"), contentPadding = PaddingValues(AxComponentTokens.pageMargin), verticalArrangement = Arrangement.spacedBy(AxSpacing.lg)) {
             item {
                 Text("읽고, 기록하고, 다시 꺼내보는 AX", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(AxSpacing.sm))
@@ -36,7 +35,7 @@ internal fun NotesScreen(
             item {
                 Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(AxSpacing.sm)) {
                     listOf("전체", "시리즈", "프로젝트").forEach { name ->
-                        FilterChip(selected = collectionType == name, onClick = { onCollection(name, null) }, label = { Text(name) }, modifier = Modifier.testTag("collection_$name"))
+                        AxFilterChip(selected = collectionType == name, onClick = { onCollection(name, null) }, label = { Text(name) }, modifier = Modifier.testTag("collection_$name"))
                     }
                 }
             }
@@ -48,7 +47,7 @@ internal fun NotesScreen(
             } else {
                 val visibleArticles = articlesInCollection(articles, collectionType, collectionId)
                 item {
-                    if(collectionId != null) TextButton(onClick = { onCollection(collectionType, null) }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null); Spacer(Modifier.width(AxSpacing.sm)); Text("${collectionType} 목록") }
+                    if(collectionId != null) AxTextButton(onClick = { onCollection(collectionType, null) }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null); Spacer(Modifier.width(AxSpacing.sm)); Text("${collectionType} 목록") }
                     Text(collectionId?.let { id -> articleCollections(articles, collectionType).find { it.id == id }?.title } ?: "최신 Notes · ${visibleArticles.size}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                 }
                 if(visibleArticles.isEmpty() && !busy) item { EmptyState("아직 내려받은 글이 없어요", "인터넷에 연결한 뒤 아래로 당겨 글을 받아보세요") }
@@ -60,8 +59,8 @@ internal fun NotesScreen(
 
 @Composable
 private fun CollectionCard(group: ArticleCollection, type: String, onClick: () -> Unit) {
-    Card(onClick = onClick, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(AxSize.cardRadius), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)) {
-        Row(Modifier.padding(AxSpacing.lg), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(AxSpacing.lg)) {
+    AxCard(onClick = onClick) {
+        Row(Modifier.padding(AxComponentTokens.cardPadding), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(AxSpacing.lg)) {
             Icon(painterResource(if(type == "시리즈") R.drawable.ic_series else R.drawable.ic_project), null, Modifier.size(AxSize.icon), tint = MaterialTheme.colorScheme.primary)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(AxSpacing.xs)) {
                 Text(group.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)

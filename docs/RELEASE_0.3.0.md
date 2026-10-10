@@ -20,9 +20,9 @@ Content DB v1 → v2 adds six nullable taxonomy columns in place. Personal DB re
 
 The companion `ax-notes-public` source change adds optional schema-v1 taxonomy fields. It must be reviewed and published before the live endpoint can supply groups. Older manifests remain readable with no invented groups. The empty group state says metadata has not arrived rather than asserting the website has no groups.
 
-## Verification
+## Initial issue-6 verification
 
-Final integrated verification ran on 2026-10-10 (UTC), after restoration of the candidate worktree.
+The first issue-6 commit (`98ac1817`) passed the checks below on 2026-10-10 (UTC). The later design-system follow-up is verified separately below; these results alone do not cover it.
 
 - Web verify, default subpath and production root: 50 tests passed on each path after reconstruction.
 - Web real-pipeline draft exclusion: passed.
@@ -36,6 +36,27 @@ Final integrated verification ran on 2026-10-10 (UTC), after restoration of the 
 - This Android repository has no hosted CI workflow; local checks do not imply a hosted CI pass.
 - Android device/emulator UI, real WebView images, TalkBack and physical-device QA: not verified for this version.
 - Figma account library installation/synchronization: not performed; official kit referenced and existing Compose library configured.
+
+## Design-system follow-up
+
+The selected official Material 3 kit now informs actual shared component contracts, not only theme colors:
+
+- Reusable cards, primary/outlined/text/destructive actions, filters, input fields, notices and empty states are used by the app.
+- Paired light/dark roles, the full typography scale, spacing, shapes and component dimensions are defined centrally. No alternate UI framework or font dependency was added.
+- Long-form reader CSS and native fallback share semantic colors and reader type/layout tokens, with unitless CSS line heights for font scaling.
+- `AxDesignSystemCatalog` renders the same components in their real states. [Token handoff](../design/README.md) includes a generated JSON export and a drift check.
+- Existing tablet navigation, stored data, classification semantics, reminders and draft protections are retained. Version stays 0.3.0/code 3 because this extends the same unpublished candidate.
+
+Final follow-up verification on 2026-10-10 (UTC):
+
+- `testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest compileReleaseKotlin`: passed.
+- All 112 JVM/Robolectric tests passed (16 suites; failures/errors/skips 0). The 23 new checks include 60 semantic text-color pairs across light/dark, real component states, native-graphics Korean layout at 200%, and reader/fallback tokens.
+- Lint: 0 errors, 5 KTX recommendation warnings. The legacy WebView database-disable call still emits a compiler deprecation warning; it remains explicitly disabled for older supported Android versions.
+- Debug app and instrumentation-test APKs built; release Kotlin also compiled without the debug-only preview dependencies. Package/version readback remains `net.msalt.axnotes.internal` / `0.3.0` / code `3`.
+- Token export drift check and 10 Python export/mutation tests passed. They verify that typography changes are exported and unsupported token expressions fail rather than silently disappearing.
+- Independent review found and resolved long reminder-state truncation and incomplete token drift detection. Existing data, tablet and memo flows passed the integrated regressions.
+- The four Compose preview entry points compile; Android Studio preview rendering itself was not run. Robolectric PNG capture timed out waiting for a window redraw, so no screenshots are claimed. Native text-layout checks passed; they are not a substitute for device visual QA.
+- Actual Figma file/library creation, device/emulator instrumentation execution, TalkBack and installed-app update compatibility remain unverified. No merge, deployment, release or device installation was performed.
 
 ## Installation safety
 

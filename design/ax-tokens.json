@@ -1,0 +1,1019 @@
+{
+  "$description": "AX adaptation of Google's Material 3 Design Kit. Generated from Kotlin; see docs/DESIGN_SYSTEM.md for origin and Figma status.",
+  "color": {
+    "light": {
+      "primary": {
+        "$type": "color",
+        "$value": "#315e50"
+      },
+      "onPrimary": {
+        "$type": "color",
+        "$value": "#ffffff"
+      },
+      "primaryContainer": {
+        "$type": "color",
+        "$value": "#d5e9db"
+      },
+      "onPrimaryContainer": {
+        "$type": "color",
+        "$value": "#163c2e"
+      },
+      "inversePrimary": {
+        "$type": "color",
+        "$value": "#b3d5c3"
+      },
+      "secondary": {
+        "$type": "color",
+        "$value": "#506458"
+      },
+      "onSecondary": {
+        "$type": "color",
+        "$value": "#ffffff"
+      },
+      "secondaryContainer": {
+        "$type": "color",
+        "$value": "#dfe9df"
+      },
+      "onSecondaryContainer": {
+        "$type": "color",
+        "$value": "#243d30"
+      },
+      "tertiary": {
+        "$type": "color",
+        "$value": "#776038"
+      },
+      "onTertiary": {
+        "$type": "color",
+        "$value": "#ffffff"
+      },
+      "tertiaryContainer": {
+        "$type": "color",
+        "$value": "#f2e4c5"
+      },
+      "onTertiaryContainer": {
+        "$type": "color",
+        "$value": "#493714"
+      },
+      "background": {
+        "$type": "color",
+        "$value": "#faf8f0"
+      },
+      "onBackground": {
+        "$type": "color",
+        "$value": "#202820"
+      },
+      "surface": {
+        "$type": "color",
+        "$value": "#faf8f0"
+      },
+      "onSurface": {
+        "$type": "color",
+        "$value": "#202820"
+      },
+      "surfaceVariant": {
+        "$type": "color",
+        "$value": "#e6e9de"
+      },
+      "onSurfaceVariant": {
+        "$type": "color",
+        "$value": "#515c52"
+      },
+      "surfaceTint": {
+        "$type": "color",
+        "$value": "#315e50"
+      },
+      "inverseSurface": {
+        "$type": "color",
+        "$value": "#2b332c"
+      },
+      "inverseOnSurface": {
+        "$type": "color",
+        "$value": "#f3f3e9"
+      },
+      "outline": {
+        "$type": "color",
+        "$value": "#747e72"
+      },
+      "outlineVariant": {
+        "$type": "color",
+        "$value": "#cdd3c7"
+      },
+      "surfaceBright": {
+        "$type": "color",
+        "$value": "#fefcf6"
+      },
+      "surfaceDim": {
+        "$type": "color",
+        "$value": "#dddcd3"
+      },
+      "surfaceContainerLowest": {
+        "$type": "color",
+        "$value": "#ffffff"
+      },
+      "surfaceContainerLow": {
+        "$type": "color",
+        "$value": "#f5f3eb"
+      },
+      "surfaceContainer": {
+        "$type": "color",
+        "$value": "#f0eee5"
+      },
+      "surfaceContainerHigh": {
+        "$type": "color",
+        "$value": "#eae8df"
+      },
+      "surfaceContainerHighest": {
+        "$type": "color",
+        "$value": "#e4e3da"
+      },
+      "error": {
+        "$type": "color",
+        "$value": "#b3261e"
+      },
+      "onError": {
+        "$type": "color",
+        "$value": "#ffffff"
+      },
+      "errorContainer": {
+        "$type": "color",
+        "$value": "#f9dedc"
+      },
+      "onErrorContainer": {
+        "$type": "color",
+        "$value": "#410e0b"
+      }
+    },
+    "dark": {
+      "primary": {
+        "$type": "color",
+        "$value": "#b3d5c3"
+      },
+      "onPrimary": {
+        "$type": "color",
+        "$value": "#113829"
+      },
+      "primaryContainer": {
+        "$type": "color",
+        "$value": "#2d5141"
+      },
+      "onPrimaryContainer": {
+        "$type": "color",
+        "$value": "#d5e9db"
+      },
+      "inversePrimary": {
+        "$type": "color",
+        "$value": "#315e50"
+      },
+      "secondary": {
+        "$type": "color",
+        "$value": "#bdcfbe"
+      },
+      "onSecondary": {
+        "$type": "color",
+        "$value": "#283d30"
+      },
+      "secondaryContainer": {
+        "$type": "color",
+        "$value": "#3b5141"
+      },
+      "onSecondaryContainer": {
+        "$type": "color",
+        "$value": "#dfe9df"
+      },
+      "tertiary": {
+        "$type": "color",
+        "$value": "#e1c78d"
+      },
+      "onTertiary": {
+        "$type": "color",
+        "$value": "#403111"
+      },
+      "tertiaryContainer": {
+        "$type": "color",
+        "$value": "#5b4722"
+      },
+      "onTertiaryContainer": {
+        "$type": "color",
+        "$value": "#f2e4c5"
+      },
+      "background": {
+        "$type": "color",
+        "$value": "#151d19"
+      },
+      "onBackground": {
+        "$type": "color",
+        "$value": "#e3e8df"
+      },
+      "surface": {
+        "$type": "color",
+        "$value": "#151d19"
+      },
+      "onSurface": {
+        "$type": "color",
+        "$value": "#e3e8df"
+      },
+      "surfaceVariant": {
+        "$type": "color",
+        "$value": "#3f4940"
+      },
+      "onSurfaceVariant": {
+        "$type": "color",
+        "$value": "#c3ccc0"
+      },
+      "surfaceTint": {
+        "$type": "color",
+        "$value": "#b3d5c3"
+      },
+      "inverseSurface": {
+        "$type": "color",
+        "$value": "#e3e8df"
+      },
+      "inverseOnSurface": {
+        "$type": "color",
+        "$value": "#29322b"
+      },
+      "outline": {
+        "$type": "color",
+        "$value": "#8d998c"
+      },
+      "outlineVariant": {
+        "$type": "color",
+        "$value": "#424d43"
+      },
+      "surfaceBright": {
+        "$type": "color",
+        "$value": "#364139"
+      },
+      "surfaceDim": {
+        "$type": "color",
+        "$value": "#101713"
+      },
+      "surfaceContainerLowest": {
+        "$type": "color",
+        "$value": "#101713"
+      },
+      "surfaceContainerLow": {
+        "$type": "color",
+        "$value": "#1a241d"
+      },
+      "surfaceContainer": {
+        "$type": "color",
+        "$value": "#1e2922"
+      },
+      "surfaceContainerHigh": {
+        "$type": "color",
+        "$value": "#29342c"
+      },
+      "surfaceContainerHighest": {
+        "$type": "color",
+        "$value": "#343f37"
+      },
+      "error": {
+        "$type": "color",
+        "$value": "#f2b8b5"
+      },
+      "onError": {
+        "$type": "color",
+        "$value": "#601410"
+      },
+      "errorContainer": {
+        "$type": "color",
+        "$value": "#8c1d18"
+      },
+      "onErrorContainer": {
+        "$type": "color",
+        "$value": "#f9dedc"
+      }
+    }
+  },
+  "dimension": {
+    "AxSpacing": {
+      "xs": {
+        "$type": "dimension",
+        "$value": {
+          "value": 4.0,
+          "unit": "dp"
+        }
+      },
+      "sm": {
+        "$type": "dimension",
+        "$value": {
+          "value": 8.0,
+          "unit": "dp"
+        }
+      },
+      "md": {
+        "$type": "dimension",
+        "$value": {
+          "value": 12.0,
+          "unit": "dp"
+        }
+      },
+      "lg": {
+        "$type": "dimension",
+        "$value": {
+          "value": 16.0,
+          "unit": "dp"
+        }
+      },
+      "xl": {
+        "$type": "dimension",
+        "$value": {
+          "value": 20.0,
+          "unit": "dp"
+        }
+      },
+      "xxl": {
+        "$type": "dimension",
+        "$value": {
+          "value": 24.0,
+          "unit": "dp"
+        }
+      },
+      "section": {
+        "$type": "dimension",
+        "$value": {
+          "value": 32.0,
+          "unit": "dp"
+        }
+      }
+    },
+    "AxSize": {
+      "icon": {
+        "$type": "dimension",
+        "$value": {
+          "value": 24.0,
+          "unit": "dp"
+        }
+      },
+      "supportingIcon": {
+        "$type": "dimension",
+        "$value": {
+          "value": 20.0,
+          "unit": "dp"
+        }
+      },
+      "emptyStateIcon": {
+        "$type": "dimension",
+        "$value": {
+          "value": 40.0,
+          "unit": "dp"
+        }
+      },
+      "minTouch": {
+        "$type": "dimension",
+        "$value": {
+          "value": 48.0,
+          "unit": "dp"
+        }
+      },
+      "bottomNavigation": {
+        "$type": "dimension",
+        "$value": {
+          "value": 56.0,
+          "unit": "dp"
+        }
+      },
+      "cardRadius": {
+        "$type": "dimension",
+        "$value": {
+          "value": 16.0,
+          "unit": "dp"
+        }
+      },
+      "dialogRadius": {
+        "$type": "dimension",
+        "$value": {
+          "value": 28.0,
+          "unit": "dp"
+        }
+      },
+      "inputRadius": {
+        "$type": "dimension",
+        "$value": {
+          "value": 12.0,
+          "unit": "dp"
+        }
+      },
+      "buttonRadius": {
+        "$type": "dimension",
+        "$value": {
+          "value": 12.0,
+          "unit": "dp"
+        }
+      },
+      "filterRadius": {
+        "$type": "dimension",
+        "$value": {
+          "value": 8.0,
+          "unit": "dp"
+        }
+      },
+      "fieldMinHeight": {
+        "$type": "dimension",
+        "$value": {
+          "value": 56.0,
+          "unit": "dp"
+        }
+      },
+      "editorMinHeight": {
+        "$type": "dimension",
+        "$value": {
+          "value": 200.0,
+          "unit": "dp"
+        }
+      },
+      "listMaxWidth": {
+        "$type": "dimension",
+        "$value": {
+          "value": 760.0,
+          "unit": "dp"
+        }
+      },
+      "readerMaxWidth": {
+        "$type": "dimension",
+        "$value": {
+          "value": 880.0,
+          "unit": "dp"
+        }
+      },
+      "railWidth": {
+        "$type": "dimension",
+        "$value": {
+          "value": 96.0,
+          "unit": "dp"
+        }
+      },
+      "largeTextRailWidth": {
+        "$type": "dimension",
+        "$value": {
+          "value": 112.0,
+          "unit": "dp"
+        }
+      },
+      "railItemMinHeight": {
+        "$type": "dimension",
+        "$value": {
+          "value": 72.0,
+          "unit": "dp"
+        }
+      },
+      "placeholderMaxWidth": {
+        "$type": "dimension",
+        "$value": {
+          "value": 480.0,
+          "unit": "dp"
+        }
+      }
+    },
+    "AxComponentTokens": {
+      "cardPadding": {
+        "$type": "dimension",
+        "$value": {
+          "value": 16.0,
+          "unit": "dp"
+        }
+      },
+      "cardGap": {
+        "$type": "dimension",
+        "$value": {
+          "value": 12.0,
+          "unit": "dp"
+        }
+      },
+      "pageMargin": {
+        "$type": "dimension",
+        "$value": {
+          "value": 20.0,
+          "unit": "dp"
+        }
+      },
+      "sectionGap": {
+        "$type": "dimension",
+        "$value": {
+          "value": 24.0,
+          "unit": "dp"
+        }
+      },
+      "controlGap": {
+        "$type": "dimension",
+        "$value": {
+          "value": 8.0,
+          "unit": "dp"
+        }
+      },
+      "outlineWidth": {
+        "$type": "dimension",
+        "$value": {
+          "value": 1.0,
+          "unit": "dp"
+        }
+      },
+      "selectedOutlineWidth": {
+        "$type": "dimension",
+        "$value": {
+          "value": 2.0,
+          "unit": "dp"
+        }
+      },
+      "placeholderHorizontalPadding": {
+        "$type": "dimension",
+        "$value": {
+          "value": 36.0,
+          "unit": "dp"
+        }
+      },
+      "placeholderVerticalPadding": {
+        "$type": "dimension",
+        "$value": {
+          "value": 72.0,
+          "unit": "dp"
+        }
+      }
+    }
+  },
+  "typography": {
+    "displayLarge": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "sans-serif",
+        "fontWeight": 700,
+        "fontSize": {
+          "value": 40.0,
+          "unit": "sp"
+        },
+        "lineHeight": {
+          "value": 48.0,
+          "unit": "sp"
+        },
+        "letterSpacing": {
+          "value": 0.0,
+          "unit": "sp"
+        }
+      }
+    },
+    "displayMedium": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "sans-serif",
+        "fontWeight": 700,
+        "fontSize": {
+          "value": 36.0,
+          "unit": "sp"
+        },
+        "lineHeight": {
+          "value": 44.0,
+          "unit": "sp"
+        },
+        "letterSpacing": {
+          "value": 0.0,
+          "unit": "sp"
+        }
+      }
+    },
+    "displaySmall": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "sans-serif",
+        "fontWeight": 700,
+        "fontSize": {
+          "value": 32.0,
+          "unit": "sp"
+        },
+        "lineHeight": {
+          "value": 40.0,
+          "unit": "sp"
+        },
+        "letterSpacing": {
+          "value": 0.0,
+          "unit": "sp"
+        }
+      }
+    },
+    "headlineLarge": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "sans-serif",
+        "fontWeight": 700,
+        "fontSize": {
+          "value": 28.0,
+          "unit": "sp"
+        },
+        "lineHeight": {
+          "value": 36.0,
+          "unit": "sp"
+        },
+        "letterSpacing": {
+          "value": 0.0,
+          "unit": "sp"
+        }
+      }
+    },
+    "headlineMedium": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "sans-serif",
+        "fontWeight": 700,
+        "fontSize": {
+          "value": 24.0,
+          "unit": "sp"
+        },
+        "lineHeight": {
+          "value": 32.0,
+          "unit": "sp"
+        },
+        "letterSpacing": {
+          "value": 0.0,
+          "unit": "sp"
+        }
+      }
+    },
+    "headlineSmall": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "sans-serif",
+        "fontWeight": 600,
+        "fontSize": {
+          "value": 22.0,
+          "unit": "sp"
+        },
+        "lineHeight": {
+          "value": 30.0,
+          "unit": "sp"
+        },
+        "letterSpacing": {
+          "value": 0.0,
+          "unit": "sp"
+        }
+      }
+    },
+    "titleLarge": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "sans-serif",
+        "fontWeight": 600,
+        "fontSize": {
+          "value": 22.0,
+          "unit": "sp"
+        },
+        "lineHeight": {
+          "value": 28.0,
+          "unit": "sp"
+        },
+        "letterSpacing": {
+          "value": 0.0,
+          "unit": "sp"
+        }
+      }
+    },
+    "titleMedium": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "sans-serif",
+        "fontWeight": 500,
+        "fontSize": {
+          "value": 16.0,
+          "unit": "sp"
+        },
+        "lineHeight": {
+          "value": 24.0,
+          "unit": "sp"
+        },
+        "letterSpacing": {
+          "value": 0.0,
+          "unit": "sp"
+        }
+      }
+    },
+    "titleSmall": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "sans-serif",
+        "fontWeight": 600,
+        "fontSize": {
+          "value": 14.0,
+          "unit": "sp"
+        },
+        "lineHeight": {
+          "value": 20.0,
+          "unit": "sp"
+        },
+        "letterSpacing": {
+          "value": 0.0,
+          "unit": "sp"
+        }
+      }
+    },
+    "bodyLarge": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "sans-serif",
+        "fontWeight": 400,
+        "fontSize": {
+          "value": 16.0,
+          "unit": "sp"
+        },
+        "lineHeight": {
+          "value": 24.0,
+          "unit": "sp"
+        },
+        "letterSpacing": {
+          "value": 0.0,
+          "unit": "sp"
+        }
+      }
+    },
+    "bodyMedium": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "sans-serif",
+        "fontWeight": 400,
+        "fontSize": {
+          "value": 14.0,
+          "unit": "sp"
+        },
+        "lineHeight": {
+          "value": 20.0,
+          "unit": "sp"
+        },
+        "letterSpacing": {
+          "value": 0.0,
+          "unit": "sp"
+        }
+      }
+    },
+    "bodySmall": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "sans-serif",
+        "fontWeight": 400,
+        "fontSize": {
+          "value": 12.0,
+          "unit": "sp"
+        },
+        "lineHeight": {
+          "value": 16.0,
+          "unit": "sp"
+        },
+        "letterSpacing": {
+          "value": 0.0,
+          "unit": "sp"
+        }
+      }
+    },
+    "labelLarge": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "sans-serif",
+        "fontWeight": 500,
+        "fontSize": {
+          "value": 14.0,
+          "unit": "sp"
+        },
+        "lineHeight": {
+          "value": 20.0,
+          "unit": "sp"
+        },
+        "letterSpacing": {
+          "value": 0.0,
+          "unit": "sp"
+        }
+      }
+    },
+    "labelMedium": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "sans-serif",
+        "fontWeight": 500,
+        "fontSize": {
+          "value": 12.0,
+          "unit": "sp"
+        },
+        "lineHeight": {
+          "value": 16.0,
+          "unit": "sp"
+        },
+        "letterSpacing": {
+          "value": 0.0,
+          "unit": "sp"
+        }
+      }
+    },
+    "labelSmall": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "sans-serif",
+        "fontWeight": 500,
+        "fontSize": {
+          "value": 11.0,
+          "unit": "sp"
+        },
+        "lineHeight": {
+          "value": 16.0,
+          "unit": "sp"
+        },
+        "letterSpacing": {
+          "value": 0.0,
+          "unit": "sp"
+        }
+      }
+    }
+  },
+  "reader": {
+    "bodyFontSize": {
+      "$type": "number",
+      "$value": 18
+    },
+    "bodyLineHeight": {
+      "$type": "number",
+      "$value": 30
+    },
+    "titleFontSize": {
+      "$type": "number",
+      "$value": 28
+    },
+    "titleLineHeight": {
+      "$type": "number",
+      "$value": 36
+    },
+    "subheadingFontSize": {
+      "$type": "number",
+      "$value": 22
+    },
+    "subheadingLineHeight": {
+      "$type": "number",
+      "$value": 28
+    },
+    "codeFontSize": {
+      "$type": "number",
+      "$value": 14
+    },
+    "codeLineHeight": {
+      "$type": "number",
+      "$value": 22
+    },
+    "supportingFontSize": {
+      "$type": "number",
+      "$value": 14
+    },
+    "supportingLineHeight": {
+      "$type": "number",
+      "$value": 20
+    },
+    "maxContentWidth": {
+      "$type": "number",
+      "$value": 764
+    },
+    "pagePadding": {
+      "$type": "number",
+      "$value": 24
+    },
+    "minHorizontalPadding": {
+      "$type": "number",
+      "$value": 18
+    },
+    "maxHorizontalPadding": {
+      "$type": "number",
+      "$value": 32
+    },
+    "horizontalPaddingViewportPercent": {
+      "$type": "number",
+      "$value": 4
+    },
+    "bottomPadding": {
+      "$type": "number",
+      "$value": 64
+    },
+    "blockPadding": {
+      "$type": "number",
+      "$value": 16
+    },
+    "compactPadding": {
+      "$type": "number",
+      "$value": 8
+    },
+    "blockSpacing": {
+      "$type": "number",
+      "$value": 24
+    },
+    "sectionSpacing": {
+      "$type": "number",
+      "$value": 32
+    },
+    "codeCornerRadius": {
+      "$type": "number",
+      "$value": 8
+    },
+    "$description": "Font sizes/line heights: CSS px or native sp. Layout: CSS px or native dp. horizontalPaddingViewportPercent is a percentage. See AxReaderStyle.kt."
+  },
+  "semantic": {
+    "light": {
+      "canvas": {
+        "$type": "color",
+        "$value": "{color.light.background}"
+      },
+      "text": {
+        "$type": "color",
+        "$value": "{color.light.onSurface}"
+      },
+      "supportingText": {
+        "$type": "color",
+        "$value": "{color.light.onSurfaceVariant}"
+      },
+      "action": {
+        "$type": "color",
+        "$value": "{color.light.primary}"
+      },
+      "onAction": {
+        "$type": "color",
+        "$value": "{color.light.onPrimary}"
+      },
+      "actionContainer": {
+        "$type": "color",
+        "$value": "{color.light.primaryContainer}"
+      },
+      "onActionContainer": {
+        "$type": "color",
+        "$value": "{color.light.onPrimaryContainer}"
+      },
+      "card": {
+        "$type": "color",
+        "$value": "{color.light.surfaceContainerLow}"
+      },
+      "selected": {
+        "$type": "color",
+        "$value": "{color.light.secondaryContainer}"
+      },
+      "onSelected": {
+        "$type": "color",
+        "$value": "{color.light.onSecondaryContainer}"
+      },
+      "border": {
+        "$type": "color",
+        "$value": "{color.light.outlineVariant}"
+      },
+      "error": {
+        "$type": "color",
+        "$value": "{color.light.error}"
+      },
+      "onError": {
+        "$type": "color",
+        "$value": "{color.light.onError}"
+      }
+    },
+    "dark": {
+      "canvas": {
+        "$type": "color",
+        "$value": "{color.dark.background}"
+      },
+      "text": {
+        "$type": "color",
+        "$value": "{color.dark.onSurface}"
+      },
+      "supportingText": {
+        "$type": "color",
+        "$value": "{color.dark.onSurfaceVariant}"
+      },
+      "action": {
+        "$type": "color",
+        "$value": "{color.dark.primary}"
+      },
+      "onAction": {
+        "$type": "color",
+        "$value": "{color.dark.onPrimary}"
+      },
+      "actionContainer": {
+        "$type": "color",
+        "$value": "{color.dark.primaryContainer}"
+      },
+      "onActionContainer": {
+        "$type": "color",
+        "$value": "{color.dark.onPrimaryContainer}"
+      },
+      "card": {
+        "$type": "color",
+        "$value": "{color.dark.surfaceContainerLow}"
+      },
+      "selected": {
+        "$type": "color",
+        "$value": "{color.dark.secondaryContainer}"
+      },
+      "onSelected": {
+        "$type": "color",
+        "$value": "{color.dark.onSecondaryContainer}"
+      },
+      "border": {
+        "$type": "color",
+        "$value": "{color.dark.outlineVariant}"
+      },
+      "error": {
+        "$type": "color",
+        "$value": "{color.dark.error}"
+      },
+      "onError": {
+        "$type": "color",
+        "$value": "{color.dark.onError}"
+      }
+    }
+  }
+}

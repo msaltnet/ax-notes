@@ -28,13 +28,27 @@ object AxSpacing {
 
 object AxSize {
     val icon = 24.dp
+    val supportingIcon = 20.dp
+    val emptyStateIcon = 40.dp
     val minTouch = 48.dp
     // The system navigation inset is added outside this content height.
     val bottomNavigation = 56.dp
     val cardRadius = 16.dp
+    val dialogRadius = 28.dp
+    val inputRadius = 12.dp
+    val buttonRadius = 12.dp
+    val filterRadius = 8.dp
+    val fieldMinHeight = 56.dp
+    val editorMinHeight = 200.dp
+    val listMaxWidth = 760.dp
+    val readerMaxWidth = 880.dp
+    val railWidth = 96.dp
+    val largeTextRailWidth = 112.dp
+    val railItemMinHeight = 72.dp
+    val placeholderMaxWidth = 480.dp
 }
 
-private val LightColors = lightColorScheme(
+internal val AxLightColors = lightColorScheme(
     primary = Color(0xFF315E50),
     onPrimary = Color(0xFFFFFFFF),
     primaryContainer = Color(0xFFD5E9DB),
@@ -72,7 +86,7 @@ private val LightColors = lightColorScheme(
     onErrorContainer = Color(0xFF410E0B)
 )
 
-private val DarkColors = darkColorScheme(
+internal val AxDarkColors = darkColorScheme(
     primary = Color(0xFFB3D5C3),
     onPrimary = Color(0xFF113829),
     primaryContainer = Color(0xFF2D5141),
@@ -110,33 +124,49 @@ private val DarkColors = darkColorScheme(
     onErrorContainer = Color(0xFFF9DEDC)
 )
 
-private val AxTypography = Typography(
-    headlineLarge = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold, fontSize = 28.sp, lineHeight = 36.sp),
-    headlineMedium = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold, fontSize = 24.sp, lineHeight = 32.sp),
-    headlineSmall = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, fontSize = 22.sp, lineHeight = 30.sp),
-    titleLarge = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, fontSize = 20.sp, lineHeight = 28.sp),
-    titleMedium = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, fontSize = 16.sp, lineHeight = 24.sp),
-    titleSmall = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, lineHeight = 20.sp),
-    bodyLarge = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 16.sp, lineHeight = 26.sp),
-    bodyMedium = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 14.sp, lineHeight = 22.sp),
-    bodySmall = TextStyle(fontFamily = FontFamily.SansSerif, fontSize = 12.sp, lineHeight = 18.sp),
-    labelLarge = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Medium, fontSize = 14.sp, lineHeight = 20.sp),
-    labelMedium = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Medium, fontSize = 12.sp, lineHeight = 18.sp),
-    labelSmall = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Medium, fontSize = 11.sp, lineHeight = 16.sp)
+internal val AxTypography = Typography(
+    displayLarge = TextStyle(fontFamily = FontFamily.SansSerif, letterSpacing = 0.sp, fontWeight = FontWeight.Bold, fontSize = 40.sp, lineHeight = 48.sp),
+    displayMedium = TextStyle(fontFamily = FontFamily.SansSerif, letterSpacing = 0.sp, fontWeight = FontWeight.Bold, fontSize = 36.sp, lineHeight = 44.sp),
+    displaySmall = TextStyle(fontFamily = FontFamily.SansSerif, letterSpacing = 0.sp, fontWeight = FontWeight.Bold, fontSize = 32.sp, lineHeight = 40.sp),
+    headlineLarge = TextStyle(fontFamily = FontFamily.SansSerif, letterSpacing = 0.sp, fontWeight = FontWeight.Bold, fontSize = 28.sp, lineHeight = 36.sp),
+    headlineMedium = TextStyle(fontFamily = FontFamily.SansSerif, letterSpacing = 0.sp, fontWeight = FontWeight.Bold, fontSize = 24.sp, lineHeight = 32.sp),
+    headlineSmall = TextStyle(fontFamily = FontFamily.SansSerif, letterSpacing = 0.sp, fontWeight = FontWeight.SemiBold, fontSize = 22.sp, lineHeight = 30.sp),
+    titleLarge = TextStyle(fontFamily = FontFamily.SansSerif, letterSpacing = 0.sp, fontWeight = FontWeight.SemiBold, fontSize = 22.sp, lineHeight = 28.sp),
+    titleMedium = TextStyle(fontFamily = FontFamily.SansSerif, letterSpacing = 0.sp, fontWeight = FontWeight.Medium, fontSize = 16.sp, lineHeight = 24.sp),
+    titleSmall = TextStyle(fontFamily = FontFamily.SansSerif, letterSpacing = 0.sp, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, lineHeight = 20.sp),
+    bodyLarge = TextStyle(fontFamily = FontFamily.SansSerif, letterSpacing = 0.sp, fontSize = 16.sp, lineHeight = 24.sp),
+    bodyMedium = TextStyle(fontFamily = FontFamily.SansSerif, letterSpacing = 0.sp, fontSize = 14.sp, lineHeight = 20.sp),
+    bodySmall = TextStyle(fontFamily = FontFamily.SansSerif, letterSpacing = 0.sp, fontSize = 12.sp, lineHeight = 16.sp),
+    labelLarge = TextStyle(fontFamily = FontFamily.SansSerif, letterSpacing = 0.sp, fontWeight = FontWeight.Medium, fontSize = 14.sp, lineHeight = 20.sp),
+    labelMedium = TextStyle(fontFamily = FontFamily.SansSerif, letterSpacing = 0.sp, fontWeight = FontWeight.Medium, fontSize = 12.sp, lineHeight = 16.sp),
+    labelSmall = TextStyle(fontFamily = FontFamily.SansSerif, letterSpacing = 0.sp, fontWeight = FontWeight.Medium, fontSize = 11.sp, lineHeight = 16.sp)
 )
 
-private val AxShapes = Shapes(
+internal val AxShapes = Shapes(
     extraSmall = RoundedCornerShape(AxSpacing.xs),
     small = RoundedCornerShape(AxSpacing.sm),
     medium = RoundedCornerShape(AxSpacing.md),
     large = RoundedCornerShape(AxSize.cardRadius),
-    extraLarge = RoundedCornerShape(AxSpacing.xxl)
+    extraLarge = RoundedCornerShape(AxSize.dialogRadius)
 )
+
+/** Component-level decisions, separated from the spacing scale. */
+object AxComponentTokens {
+    val cardPadding = AxSpacing.lg
+    val cardGap = AxSpacing.md
+    val pageMargin = AxSpacing.xl // AX density choice, not a stock Material token.
+    val sectionGap = AxSpacing.xxl
+    val controlGap = AxSpacing.sm
+    val outlineWidth = 1.dp
+    val selectedOutlineWidth = 2.dp
+    val placeholderHorizontalPadding = 36.dp
+    val placeholderVerticalPadding = 72.dp
+}
 
 @Composable
 fun AxTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
     MaterialTheme(
-        colorScheme = if (darkTheme) DarkColors else LightColors,
+        colorScheme = if (darkTheme) AxDarkColors else AxLightColors,
         typography = AxTypography,
         shapes = AxShapes,
         content = content
