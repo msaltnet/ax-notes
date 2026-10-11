@@ -158,6 +158,19 @@ class AxComponentsTest {
     }
 
     @Test
+    fun editorialSectionTabsKeepSelectionAndFullTouchTargets() {
+        val selected = mutableStateOf(false)
+        var calls = 0
+        showComponents {
+            AxSectionTab(selected.value, { selected.value = !selected.value; calls++ }, "프로젝트", Modifier.testTag("section_tab"))
+        }
+        compose.onNodeWithTag("section_tab").assertIsNotSelected().assertHasClickAction()
+            .assertHeightIsAtLeast(AxSize.minTouch).assertWidthIsAtLeast(AxSize.minTouch)
+            .performClick().assertIsSelected().performClick().assertIsNotSelected()
+        compose.runOnIdle { assertEquals(2, calls) }
+    }
+
+    @Test
     fun cardsAndChipsExposeAndUpdateSelectionWithoutMakingFramesClickable() {
         val cardSelected = mutableStateOf(false)
         val chipSelected = mutableStateOf(false)

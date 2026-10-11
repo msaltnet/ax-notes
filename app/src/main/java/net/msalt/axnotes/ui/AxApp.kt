@@ -28,7 +28,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.res.painterResource
 import net.msalt.axnotes.R
 import net.msalt.axnotes.BuildConfig
@@ -80,6 +82,7 @@ fun AxApp(target: MutableStateFlow<String?>, vm: AxViewModel = viewModel()) {
         var collectionType by rememberSaveable { mutableStateOf("전체") }
         var collectionId by rememberSaveable { mutableStateOf<String?>(null) }
         var showOfflineInfo by rememberSaveable { mutableStateOf(false) }
+        var showFontLicense by rememberSaveable { mutableStateOf(false) }
         var editorId by rememberSaveable { mutableStateOf<String?>(null) }
         var editorDraftId by rememberSaveable { mutableStateOf(java.util.UUID.randomUUID().toString()) }
         var editorTitle by rememberSaveable { mutableStateOf("") }
@@ -183,10 +186,10 @@ fun AxApp(target: MutableStateFlow<String?>, vm: AxViewModel = viewModel()) {
                         feed = feed, busy = busy, scrollState = notesScroll,
                         collectionType = collectionType, collectionId = collectionId,
                         onCollection = ::selectCollection, onRefresh = vm::refresh,
-                        onArticle = { navigate("article:$it") }
+                        onArticle = { navigate("article:$it") }, onSearch = { navigate("screen:search") }
                     )
                     "library" -> LazyColumn(state = libraryScroll, modifier = Modifier.fillMaxSize().testTag("library_list"), contentPadding = PaddingValues(AxComponentTokens.pageMargin), verticalArrangement = Arrangement.spacedBy(AxSpacing.md)) {
-                        item { Text("나만의 읽기 공간", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold); Text("이 기기에만 저장됩니다", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant); Spacer(Modifier.height(AxSpacing.md)); Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(AxSpacing.sm)) { listOf("북마크", "메모", "읽기 알림").forEach { name -> AxFilterChip(selected = libraryType == name, onClick = { libraryType = name }, label = { Text(name) }, leadingIcon = { Icon(painterResource(libraryIcon(name)), null, Modifier.size(AxSize.supportingIcon)) }) } } }
+                        item { Text("나만의 읽기 공간", style = MaterialTheme.typography.headlineMedium); Text("이 기기에만 저장됩니다", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant); Spacer(Modifier.height(AxSpacing.md)); Row(Modifier.horizontalScroll(rememberScrollState()).selectableGroup(), horizontalArrangement = Arrangement.spacedBy(AxSpacing.sm)) { listOf("북마크", "메모", "읽기 알림").forEach { name -> AxSectionTab(selected = libraryType == name, onClick = { libraryType = name }, label = name) } } }
                         when(libraryType) {
                             "북마크" -> { if(bookmarks.isEmpty()) item { EmptyState("저장한 글이 없어요", "글의 북마크 버튼으로 다시 읽을 글을 모으세요") }; items(bookmarks, key = { it.articleId }) { saved -> SavedCard(saved.titleSnapshot, if(articles.none { it.id == saved.articleId }) "목록에 없는 글 · 저장 당시 제목" else "북마크", { navigate("article:${saved.articleId}") }, isSelected = screen in detailScreens && selectedId == saved.articleId) { AxTextButton(onClick = { vm.toggleBookmark(saved.articleId) }) { Text("해제") } } } }
                             "메모" -> { if(memos.isEmpty()) item { EmptyState("남긴 메모가 없어요", "글을 열고 메모를 남겨보세요") }; items(memos, key = { it.id }) { memo -> MemoCard(memo, { edit(memo) }, { navigate("article:${memo.articleId}") }, { requestDelete(memo) }) } }
@@ -224,17 +227,20 @@ fun AxApp(target: MutableStateFlow<String?>, vm: AxViewModel = viewModel()) {
                                 AxTextButton(onClick = { reminderArticleId = selectedId; dueAt = reminders.find { it.articleId == selectedId && it.state in listOf("scheduled", "blocked") }?.dueAt ?: (System.currentTimeMillis() + 3600000); reminderDialog = true }) { Icon(painterResource(R.drawable.ic_reminder), null); Spacer(Modifier.width(AxSpacing.xs)); Text("읽기 알림") }
                                 AxTextButton(onClick = { (article?.canonicalUrl ?: fallbackUrl)?.let { shareArticle(context, article?.title ?: fallbackTitle, it) { vm.message.value = it } } }) { Icon(Icons.Default.Share, null); Spacer(Modifier.width(AxSpacing.xs)); Text("공유") }
                             }
-                            if(article?.bodyHtml != null) {
-                                AxTextButton(onClick = { showOfflineInfo = true }, modifier = Modifier.padding(horizontal = AxSpacing.sm)) {
-                                    Icon(painterResource(R.drawable.ic_download_done), null, Modifier.size(AxSize.supportingIcon))
-                                    Spacer(Modifier.width(AxSpacing.sm))
-                                    Text("본문 저장됨", style = MaterialTheme.typography.labelLarge)
-                                }
-                            }
+                            HorizontalDivider()
                             if(article?.available == false || article == null) Warning("원문을 현재 목록에서 찾을 수 없어요. 저장한 메모와 북마크는 유지됩니다")
                             if(article?.cachedRevision != null && article?.cachedRevision != article?.wantedRevision) Warning("이전에 저장한 본문입니다. 새 버전 다운로드를 다시 시도하세요")
                             if(article?.bodyHtml != null) ReaderWebView(article!!, Modifier.weight(1f)) { vm.message.value = it }
-                            else { Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(AxSpacing.xxl)) { Text(article?.title ?: fallbackTitle, style = MaterialTheme.typography.headlineMedium); Spacer(Modifier.height(AxSpacing.xxl)); EmptyState("본문을 아직 받지 못했어요", "인터넷에 연결하고 다시 시도하세요. 개인 메모는 계속 볼 수 있어요"); AxButton(onClick = { vm.load(selectedId); if(article == null) vm.refresh() }, modifier = Modifier.padding(top = AxSpacing.md)) { Text("다시 시도") } } }
+                            else { Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(AxSpacing.xxl)) { Text(article?.title ?: fallbackTitle, style = MaterialTheme.typography.headlineMedium); Spacer(Modifier.height(AxSpacing.xxl)); EmptyState("본문을 아직 받지 못했어요", "인터넷에 연결하고 다시 시도하세요. 개인 메모는 계속 볼 수 있어요"); AxButton(onClick = { vm.load(selectedId); if(article == null) vm.refresh() }, modifier = Modifier.padding(top = AxSpacing.md)) { Text("다시 시도") } } }
+                            HorizontalDivider()
+                            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = AxSpacing.sm), verticalAlignment = Alignment.CenterVertically) {
+                                if (article?.bodyHtml != null) AxTextButton(onClick = { showOfflineInfo = true }) {
+                                    Icon(painterResource(R.drawable.ic_download_done), null, Modifier.size(AxSize.supportingIcon))
+                                    Spacer(Modifier.width(AxSpacing.xs)); Text("본문 저장됨", style = MaterialTheme.typography.labelMedium)
+                                }
+                                AxTextButton(onClick = { screen = "articleMemos" }) { Text("연결된 메모 ${memos.count { it.articleId == selectedId }}", style = MaterialTheme.typography.labelMedium) }
+                                AxTextButton(onClick = { edit(null) }) { Icon(Icons.Default.Add, null, Modifier.size(AxSize.supportingIcon)); Text("메모 남기기", style = MaterialTheme.typography.labelMedium) }
+                            }
                         }
                     }
                     "articleMemos" -> LazyColumn(state = memoScroll, modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(AxComponentTokens.pageMargin), verticalArrangement = Arrangement.spacedBy(AxSpacing.md)) {
@@ -250,11 +256,12 @@ fun AxApp(target: MutableStateFlow<String?>, vm: AxViewModel = viewModel()) {
                         AxButton(onClick = { saving = true; scope.launch { try { vm.saveMemo(editorId, selectedId, editorTitle, editorBody, editorDraftId); screen = editorReturn; originalTitle = editorTitle; originalBody = editorBody } catch(e: Exception) { if(e is kotlinx.coroutines.CancellationException) throw e; vm.message.value = e.message ?: "저장하지 못했습니다" } finally { saving = false } } }, enabled = editorBody.isNotBlank(), loading = saving, modifier = Modifier.fillMaxWidth()) { Text(if(saving) "저장 중…" else "메모 저장") }
                     }
                     "settings" -> LazyColumn(state = settingsScroll, modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(AxComponentTokens.pageMargin), verticalArrangement = Arrangement.spacedBy(AxSpacing.xxl)) {
-                        item { Text("AX Notes", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold); Text("${BuildConfig.VERSION_NAME}\n읽고, 직접 해보고, 만드는 과정을 함께 따라가는 AX 채널", style = MaterialTheme.typography.bodyMedium) }
+                        item { Text("AX Notes", style = MaterialTheme.typography.headlineLarge); Text("${BuildConfig.VERSION_NAME}\n읽고, 직접 해보고, 만드는 과정을 함께 따라가는 AX 채널", style = MaterialTheme.typography.bodyMedium) }
                         item { AxTextButton(onClick = { openExternal(context, feed?.aboutUrl ?: "https://ax.msalt.net/about/") { vm.message.value = it } }) { Text("${feed?.authorName ?: "AX Notes"} 소개") }; feed?.let { f -> val channels = org.json.JSONArray(f.channelsJson); for(i in 0 until channels.length()) { val channel = channels.getJSONObject(i); AxTextButton(onClick = { openExternal(context, channel.getString("url")) { vm.message.value = it } }) { Text(channel.getString("label")) } } } }
                         item { HorizontalDivider(); Text("콘텐츠", style = MaterialTheme.typography.titleMedium); Text("ax.msalt.net의 공개 글을 가져옵니다", style = MaterialTheme.typography.bodyMedium); Text("마지막 갱신: ${feed?.fetchedAt?.let(::formatTime) ?: "아직 없음"}", style = MaterialTheme.typography.bodyMedium); AxTextButton(onClick = { showOfflineInfo = true }) { Icon(painterResource(R.drawable.ic_download_done), null); Spacer(Modifier.width(AxSpacing.sm)); Text("저장된 본문 안내") } }
                         item { HorizontalDivider(); Text("알림", style = MaterialTheme.typography.titleMedium); Text(if(notificationEnabled) "알림 사용 가능" else "알림 차단됨 · 일정은 보관함에 유지"); AxTextButton(onClick = { context.startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)) }) { Text("시스템 알림 설정") } }
                         item { HorizontalDivider(); Text("기기 안의 데이터", style = MaterialTheme.typography.titleMedium); Text("계정·백업·동기화·내보내기가 없습니다. 앱 삭제·데이터 초기화·기기 변경 때 북마크, 메모, 알림을 잃을 수 있으며 복구할 수 없습니다. 자동 클라우드 백업과 기기 이전에서 제외하도록 구성했습니다."); Text("메모와 검색어는 서버로 보내지 않습니다. 본문 이미지와 외부 링크에는 인터넷이 사용되며 외부 사이트의 정책이 적용됩니다.", style = MaterialTheme.typography.bodySmall) }
+                        item { HorizontalDivider(); Text("글꼴", style = MaterialTheme.typography.titleMedium); Text("제목 · 나눔명조 / 본문·조작 · 시스템 글꼴", style = MaterialTheme.typography.bodyMedium); AxTextButton(onClick = { showFontLicense = true }) { Text("글꼴 라이선스") } }
                         item { AxOutlinedButton(onClick = { confirmCache = true }, enabled = !busy) { Text("콘텐츠 캐시만 삭제") }; AxTextButton(onClick = { confirmPersonal = true }, destructive = true) { Text("개인 데이터 전체 삭제") } }
                     }
                 }
@@ -277,16 +284,16 @@ fun AxApp(target: MutableStateFlow<String?>, vm: AxViewModel = viewModel()) {
                 snackbarHost = { SnackbarHost(snackbar) },
                 topBar = {
                     TopAppBar(
-                        title = { Text(title, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                        expandedHeight = maxOf(64.dp, ((if (screen == "notes") MaterialTheme.typography.headlineLarge.lineHeight.value else MaterialTheme.typography.titleLarge.lineHeight.value) * LocalDensity.current.fontScale + 16f).dp),
+                        title = {
+                            if (screen == "notes") Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(AxSpacing.xs)) {
+                                Text("AX.", style = MaterialTheme.typography.headlineLarge, fontFamily = FontFamily.Serif, fontWeight = FontWeight.Bold)
+                                Text("notes", style = MaterialTheme.typography.labelMedium, color = scheme.onSurfaceVariant, modifier = Modifier.padding(bottom = AxSpacing.sm))
+                            } else Text(title, style = MaterialTheme.typography.titleLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        },
                         navigationIcon = {
                             if (screen !in listOf("notes", "library")) IconButton(onClick = ::back) {
                                 Icon(Icons.AutoMirrored.Filled.ArrowBack, "뒤로")
-                            }
-                        },
-                        actions = {
-                            if (!layout.useRail && screen in listOf("notes", "library")) {
-                                IconButton(onClick = { navigate("screen:search") }) { Icon(Icons.Default.Search, "검색") }
-                                IconButton(onClick = { navigate("screen:settings") }) { Icon(Icons.Default.Settings, "설정") }
                             }
                         },
                         colors = TopAppBarDefaults.topAppBarColors(containerColor = scheme.background)
@@ -321,6 +328,12 @@ fun AxApp(target: MutableStateFlow<String?>, vm: AxViewModel = viewModel()) {
                 }
             }
         }
+        if(showFontLicense) {
+            val license = remember(context) { context.assets.open("licenses/NanumMyeongjo-OFL.txt").bufferedReader().use { it.readText() } }
+            AlertDialog(onDismissRequest = { showFontLicense = false }, title = { Text("나눔명조 · SIL OFL 1.1") },
+                text = { Column(Modifier.verticalScroll(rememberScrollState())) { Text(license, style = MaterialTheme.typography.bodySmall) } },
+                confirmButton = { AxTextButton(onClick = { showFontLicense = false }) { Text("닫기") } })
+        }
         if(showOfflineInfo) AlertDialog(
             onDismissRequest = { showOfflineInfo = false },
             title = { Text("저장된 본문") },
@@ -337,18 +350,22 @@ fun AxApp(target: MutableStateFlow<String?>, vm: AxViewModel = viewModel()) {
 
 @Composable internal fun EmptyState(title: String, subtitle: String) = AxEmptyState(title, subtitle)
 @Composable internal fun Warning(text: String) = AxNotice(text, tone = AxNoticeTone.Warning)
-@Composable internal fun ArticleCard(article: Article, saved: Boolean, isSelected: Boolean = false, onClick: () -> Unit) {
+@Composable internal fun ArticleCard(article: Article, saved: Boolean, isSelected: Boolean = false, ordinal: Int? = null, onClick: () -> Unit) {
     AxCard(onClick = onClick, selected = isSelected) {
-        Column(Modifier.padding(AxComponentTokens.cardPadding), verticalArrangement = Arrangement.spacedBy(AxSpacing.md)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(article.publishedAt.take(10), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
-                if(article.bodyHtml != null) Icon(painterResource(R.drawable.ic_download_done), "본문 저장됨", Modifier.size(AxSize.supportingIcon), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                if(saved) { Spacer(Modifier.width(AxSpacing.sm)); Icon(painterResource(R.drawable.ic_bookmark), "북마크됨", Modifier.size(AxSize.supportingIcon), tint = MaterialTheme.colorScheme.primary) }
+        Row(Modifier.padding(vertical = AxSpacing.lg, horizontal = AxSpacing.sm), horizontalArrangement = Arrangement.spacedBy(AxSpacing.md)) {
+            if (ordinal != null) Text(ordinal.toString().padStart(2, '0'), style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = AxSpacing.xs))
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(AxSpacing.sm)) {
+                Text(article.title, style = MaterialTheme.typography.titleMedium, maxLines = 3, overflow = TextOverflow.Ellipsis)
+                Text(article.description, maxLines = 3, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(AxSpacing.sm)) {
+                    Text(listOfNotNull(article.collectionLabel(), article.publishedAt.take(10)).joinToString(" · "),
+                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
+                    if(article.bodyHtml != null) Icon(painterResource(R.drawable.ic_download_done), "본문 저장됨", Modifier.size(AxSize.supportingIcon), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    if(saved) Icon(painterResource(R.drawable.ic_bookmark), "북마크됨", Modifier.size(AxSize.supportingIcon), tint = MaterialTheme.colorScheme.primary)
+                }
+                if(!article.available) Text("공개 목록에서 삭제됨", style = MaterialTheme.typography.labelMedium)
             }
-            Text(article.title, style = MaterialTheme.typography.titleMedium, maxLines = 3, overflow = TextOverflow.Ellipsis)
-            Text(article.description, maxLines = 3, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            article.collectionLabel()?.let { Text(it, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary) }
-            if(!article.available) Text("공개 목록에서 삭제됨", style = MaterialTheme.typography.labelLarge)
         }
     }
 }
@@ -368,12 +385,13 @@ private fun AppNavigationRail(selectedDestination: String, saving: Boolean, onSe
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(AxSpacing.md)
     ) {
+        Text("AX.", style = MaterialTheme.typography.titleLarge, fontFamily = FontFamily.Serif, fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = AxSpacing.md))
         listOf("notes" to "Notes", "library" to "내 보관함", "search" to "검색", "settings" to "설정").forEach { (route, label) ->
             NavigationRailItem(
                 selected = selectedDestination == route,
                 onClick = { onSelect(route) },
                 enabled = !saving,
-                modifier = Modifier.fillMaxWidth().heightIn(min = AxSize.railItemMinHeight).testTag("nav_$route"),
+                modifier = Modifier.fillMaxWidth().heightIn(min = AxSize.railItemMinHeight).semantics { contentDescription = label }.testTag("nav_$route"),
                 icon = {
                     when (route) {
                         "notes" -> Icon(painterResource(R.drawable.ic_article), null)
@@ -382,7 +400,8 @@ private fun AppNavigationRail(selectedDestination: String, saving: Boolean, onSe
                         else -> Icon(Icons.Default.Settings, null)
                     }
                 },
-                label = { Text(label) }
+                alwaysShowLabel = false,
+                colors = NavigationRailItemDefaults.colors(indicatorColor = MaterialTheme.colorScheme.secondaryContainer)
             )
         }
     }
@@ -397,26 +416,30 @@ private fun ReaderPlaceholder() {
         verticalArrangement = Arrangement.spacedBy(AxSpacing.xl)
     ) {
         Icon(painterResource(R.drawable.ic_article), null, Modifier.size(AxSize.emptyStateIcon), tint = MaterialTheme.colorScheme.primary)
-        Text("읽고, 생각을 남기는 공간", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.SemiBold)
+        Text("읽고, 생각을 남기는 공간", style = MaterialTheme.typography.headlineMedium)
         Text("목록에서 글을 선택하세요", style = MaterialTheme.typography.titleMedium)
         Text("글을 읽으며 북마크하고, 나만의 메모와 읽기 알림을 남겨보세요. 목록은 이곳에 그대로 있어요.", color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
-private fun libraryIcon(name: String) = when(name) {
-    "북마크" -> R.drawable.ic_bookmark_outline
-    "메모" -> R.drawable.ic_memo
-    else -> R.drawable.ic_reminder
-}
-
 @Composable
 private fun CompactNavigation(selected: String, onSelect: (String) -> Unit) {
-    Surface(color = MaterialTheme.colorScheme.surfaceContainerLow) {
-        Row(Modifier.fillMaxWidth().navigationBarsPadding().height(AxSize.bottomNavigation).selectableGroup().testTag("bottom_navigation"), verticalAlignment = Alignment.CenterVertically) {
-            listOf("notes" to "Notes", "library" to "내 보관함").forEach { (route, label) ->
-                Box(Modifier.weight(1f).fillMaxHeight().selectable(selected = selected == route, role = Role.Tab, onClick = { onSelect(route) }).semantics { contentDescription = label }.testTag("nav_$route"), contentAlignment = Alignment.Center) {
-                    Surface(color = if(selected == route) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent, shape = MaterialTheme.shapes.large) {
-                        Icon(painterResource(if(route == "notes") R.drawable.ic_article else R.drawable.ic_library), null, Modifier.padding(horizontal = AxSpacing.xl, vertical = AxSpacing.sm).size(AxSize.icon), tint = if(selected == route) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
+    val colors = MaterialTheme.colorScheme
+    Surface(color = colors.surface) {
+        Column {
+            HorizontalDivider()
+            Row(Modifier.fillMaxWidth().navigationBarsPadding().height(AxSize.bottomNavigation).selectableGroup().testTag("bottom_navigation"), verticalAlignment = Alignment.CenterVertically) {
+                listOf("notes" to "Notes", "library" to "내 보관함", "search" to "검색", "settings" to "설정").forEach { (route, label) ->
+                    Box(Modifier.weight(1f).fillMaxHeight().selectable(selected = selected == route, role = Role.Tab, onClick = { onSelect(route) })
+                        .semantics { contentDescription = label }.testTag("nav_$route")
+                        .drawBehind { if (selected == route) drawCircle(colors.primary, 2.dp.toPx(), Offset(size.width / 2, size.height - 5.dp.toPx())) }, contentAlignment = Alignment.Center) {
+                        val tint = if(selected == route) colors.primary else colors.onSurfaceVariant
+                        when(route) {
+                            "notes" -> Icon(painterResource(R.drawable.ic_article), null, Modifier.size(AxSize.icon), tint = tint)
+                            "library" -> Icon(painterResource(R.drawable.ic_library), null, Modifier.size(AxSize.icon), tint = tint)
+                            "search" -> Icon(Icons.Default.Search, null, Modifier.size(AxSize.icon), tint = tint)
+                            else -> Icon(Icons.Default.Settings, null, Modifier.size(AxSize.icon), tint = tint)
+                        }
                     }
                 }
             }

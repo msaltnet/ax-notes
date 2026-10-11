@@ -1,145 +1,100 @@
-# AX Notes design system
+# AX Notes editorial design
 
-Reference selected on 2026-10-09; implementation mapping reviewed on 2026-10-10 (UTC). This specification covers the Android 0.3.0 candidate and its reading, linked-memo, bookmark and publisher-classification flows.
+Approved visual direction: 2026-10-10 (UTC), implemented in the existing Android 0.3.0 candidate. AX Notes is a personal technical journal for reading experiments and development records, linking thoughts to articles and revisiting them. It is not a book-tracking app.
 
-## Decision and source comparison
+## Direction and references
 
-Use Google's **Material 3 Design Kit** as the design-system reference, then express AX's reading-oriented choices in the existing Compose Material 3 implementation. The app already uses `androidx.compose.material3:material3`; another UI framework would add translation and regression work without improving the core reading flow.
+The approved concept, `AXNotes-editorial-concept.png`, was inspected before implementation. Its defining choices are warm paper and dark ink, expressive Korean serif headings, quiet sans-serif controls and body text, thin rules, margin annotations and a tablet list/reader composition.
 
-| Candidate | Verified original | Fit for AX Notes | Decision |
-| --- | --- | --- | --- |
-| Google Material 3 Design Kit | [Figma Community file](https://www.figma.com/community/file/1035203688168086460/material-3-design-kit), linked by [Figma's official UI-kit guide](https://help.figma.com/hc/en-us/articles/24037724065943-Start-designing-with-UI-kits) | Android component families and theme roles match the existing Compose code. [Google's account of the kit](https://design.google/library/config-2024) confirms Compose code snippets and prototyping support. | Selected foundation; AX owns its palette, density, reader styling and product compositions. |
-| Figma Simple Design System | [Figma Community file](https://www.figma.com/community/file/1380235722331273046/simple-design-system), linked by [Figma's own repository](https://github.com/figma/sds) | Useful variable/component organization and responsive-web examples. Its reference implementation is React, requiring another Android behavior mapping. | Considered, not imported or ported. |
+Public references informed the direction:
 
-These are product-fit judgments based on primary documentation, not a claim that the current Community files were downloaded or inspected node by node. The reference is the actual Google-published Figma kit, not an unrelated Material-styled template.
+- [Obra / shadcn UI Community resource](https://www.figma.com/community/file/1514746685758799870): compact controls, small corners and a restrained outline vocabulary.
+- [Untitled UI Free](https://www.untitledui.com/free-figma-ui-kit): title/metadata/content hierarchy and spacing. Its free and paid offerings are distinct; no paid capability or asset is used.
+- [Radix Themes](https://www.radix-ui.com/themes/docs/overview/getting-started): restrained component and state treatment.
 
-Figma documents both as UI kits available to editors on all plans. Basic use therefore has a documented path without buying another kit. Code Connect has separate paid-plan requirements and is not required by this implementation. Connected UI kits can offer upstream updates; copied files do not automatically inherit them. No purchase, subscription or upgrade was made.
+These are inspiration references, not imported libraries or copied templates. The Figma Community resource was not editable from this workspace. No Figma file/library was created or connected. No restricted kit artwork, icons, design variables or code was copied. AX owns this composition and token mapping.
 
-## What exists, and what does not
+The earlier Material 3 visual direction is superseded. Existing Compose Material 3 controls remain the implementation foundation for focus, press, disabled, selection and accessibility behavior; using them does not require Material's default card-heavy appearance. This avoids replacing working Android behavior for a visual change.
 
-The repository contains an AX theme, reusable production components, reader tokens, a component catalogue, debug preview declarations and a generated token handoff. These are implemented code artifacts.
+## Production source of truth
 
-**No Figma design file was created, duplicated or edited. No Figma variables collection, component set or library was created, installed, enabled, published or synchronized.** The Community page was unavailable in the cloud browser, and direct research retrieval was blocked; its identity was established through official source links. Figma account editing access and write capabilities were not verified during this work. No node IDs, asset extraction or Figma-to-code synchronization are claimed.
+- `AxDesignSystem.kt`: light/dark roles, typography, spacing, shapes and dimensions.
+- `AxComponents.kt`: ruled/selectable content rows, section tabs, actions, forms and notices.
+- `NotesScreen.kt`: journal heading, search shortcut, classification and numbered article index.
+- `AxApp.kt`: masthead, compact navigation/rail, saved records and reader margin actions.
+- `AxReaderStyle.kt` and `ReaderWebView.kt`: HTML and native fallback reading treatment.
+- `AxDesignSystemCatalog.kt`: development catalogue of the same production components.
+- [Generated token handoff](../design/ax-tokens.json): exported from Kotlin, not a separately maintained palette or verified Figma import format.
 
-Enabling a reference kit and building an AX library are separate steps. A future Figma handoff needs an editable destination, inspection of the supported editing tools, AX light/dark variables, reusable component variants, representative product screens and review of their behavior. Preserve linked upstream instances where their exposed properties support AX customization. If components are copied for local customization, record the source and maintain updates explicitly. A screen composed of editable layers alone is not a completed component library.
+Regenerate with `python scripts/export-design-tokens.py`; verify with `python scripts/export-design-tokens.py --check`. Unsupported token expressions fail explicitly. Editorial font-resource changes must be reflected in the exporter rather than silently inheriting stale font metadata.
 
-The [generated token JSON](../design/ax-tokens.json) is a handoff reference, **not a verified Figma import/plugin format**. It must not be presented as a completed Figma installation.
+## Paper and ink
 
-## Source of truth and three-layer mapping
-
-- [AxDesignSystem.kt](../app/src/main/java/net/msalt/axnotes/ui/AxDesignSystem.kt): explicit light/dark schemes, all 15 typography roles, spacing, shapes, dimensions and component tokens.
-- [AxComponents.kt](../app/src/main/java/net/msalt/axnotes/ui/AxComponents.kt): reusable components used by the app, built on Material controls.
-- [AxReaderStyle.kt](../app/src/main/java/net/msalt/axnotes/ui/AxReaderStyle.kt): shared long-form typography/layout and generated HTML colors.
-- [AxDesignSystemCatalog.kt](../app/src/main/java/net/msalt/axnotes/ui/AxDesignSystemCatalog.kt): executable catalogue of those production components, not a separate mock UI or app destination.
-
-The three layers describe how values reach the UI; they do not imply three existing Figma collections:
-
-1. **Foundation values:** concrete light/dark colors, spacing, type sizes and shape/dimension values in Kotlin. Color literals are defined directly in Material role declarations; there is no claimed imported Google tonal-palette database.
-2. **Semantic roles:** `MaterialTheme.colorScheme`, `typography` and `shapes` express usage. The JSON also provides `canvas`, `text`, `supportingText`, `action`, `card`, `selected` and `error` aliases to those colors.
-3. **Component decisions:** `AxComponentTokens`, relevant `AxSize` values and implementations select padding, outlines, control shapes and role pairs. Ordinary cards use `surfaceContainerLow/onSurface`; selected cards use `secondaryContainer/onSecondaryContainer` and a stronger primary-colored outline.
-
-Change Kotlin, regenerate with `python scripts/export-design-tokens.py`, then run `python scripts/export-design-tokens.py --check`. Do not maintain an unrelated HTML palette or manually edited token export. See [design/README.md](../design/README.md). The [official Compose theme model](https://developer.android.com/develop/ui/compose/designsystems/material3) supplies the upstream color/type/shape mapping.
-
-## AX color roles
-
-The existing forest-green and paper palette is retained. `AxTheme` follows the system light/dark setting but intentionally does not apply wallpaper-derived dynamic colors.
-
-| AX use | Material role | Light | Dark |
-| --- | --- | --- | --- |
-| Primary action / link | `primary` | `#315E50` | `#B3D5C3` |
-| Text on primary action | `onPrimary` | `#FFFFFF` | `#113829` |
-| Primary container / foreground | `primaryContainer/onPrimaryContainer` | `#D5E9DB / #163C2E` | `#2D5141 / #D5E9DB` |
-| Canvas / reading surface | `background/surface` | `#FAF8F0` | `#151D19` |
-| Main text | `onSurface/onBackground` | `#202820` | `#E3E8DF` |
-| Supporting text | `onSurfaceVariant` | `#515C52` | `#C3CCC0` |
-| Ordinary card | `surfaceContainerLow` | `#F5F3EB` | `#1A241D` |
-| Selected container / foreground | `secondaryContainer/onSecondaryContainer` | `#DFE9DF / #243D30` | `#3B5141 / #DFE9DF` |
-| Subtle border | `outlineVariant` | `#CDD3C7` | `#424D43` |
-| Error container / foreground | `errorContainer/onErrorContainer` | `#F9DEDC / #410E0B` | `#8C1D18 / #F9DEDC` |
-
-Information notices use the secondary container pair, warnings the tertiary pair, and errors the error pair. Destructive text actions use `error`. Important state also uses text, icons, outlines or semantics. A decorative outline is not a substitute for a focus or selection indicator.
-
-The complete scheme, including inverse and surface-container roles, lives in Kotlin and the JSON. Pair foregrounds with their intended backgrounds. Static color-pair checks alone do not establish the contrast of overlays, disabled controls, images or every rendered screen.
-
-## Typography, spacing and shape
-
-| Use | Current AX value | Source |
+| Role | Light | Dark |
 | --- | --- | --- |
-| Screen title | 22sp / 28sp, semibold | `typography.titleLarge` |
-| Content-card title | 16sp / 24sp, medium | `typography.titleMedium` |
-| UI body | 16sp / 24sp | `typography.bodyLarge` |
-| Supporting text | 14sp / 20sp | `typography.bodyMedium` |
-| Metadata / medium label | 12sp / 16sp | `bodySmall/labelMedium` |
-| Long-form reader | 18 / 30 | `AxReaderStyle`; units below |
-| Spacing scale | 4, 8, 12, 16, 20, 24, 32dp | `AxSpacing` |
-| Page margin | 20dp | `AxComponentTokens.pageMargin`; AX density choice |
-| Card padding / card gap | 16dp / 12dp | `AxComponentTokens` |
-| Section gap / control gap | 24dp / 8dp | `AxComponentTokens` |
-| Shape scale | 4, 8, 12, 16, 28dp | `AxShapes` |
-| Card / dialog corners | 16dp / 28dp | `AxSize` |
-| Button / input / filter corners | 12dp / 12dp / 8dp | `AxSize` |
-| Ordinary / selected card outline | 1dp / 2dp | `AxComponentTokens` |
-| Icon / minimum interactive target | 24dp / 48 × 48dp | `AxSize` and Material control sizing |
-| Field / editor minimum height | 56dp / 200dp | `AxSize` |
+| Canvas / reader | `#F8F7F0` | `#20271F` |
+| Main ink | `#293026` | `#E6E6D8` |
+| Supporting text | `#515C52` | `#C3CCC0` |
+| Action ink | `#40563B` | `#D1DCB7` |
+| Selected row | `#E9EDDF` | `#3B5141` |
+| Selected foreground | `#2E3B28` | `#E9EDDF` |
+| Thin rule | `#CDD3C7` | `#424D43` |
 
-All Compose text roles specify Android's sans-serif fallback, scalable `sp` sizes and zero letter spacing; Korean fallback remains platform-provided. No font package was added. Reader text is a separate long-form style rather than an enlargement of every UI label. Controls/forms use minimum heights and wrapping/scrolling. The token named `AxSpacing.section` is 32dp; the **component** `sectionGap` intentionally aliases the 24dp step.
+Unselected content rows use the page surface, with no elevation or enclosing rounded border. Selection adds both a tint and a 3dp leading rule with selected semantics. Important state is not conveyed through color alone. Warnings/errors retain paired accessible foreground/background roles and explicit text. The remaining complete role definitions live in Kotlin and the generated JSON. Wallpaper-derived dynamic colors are intentionally disabled.
 
-These are AX code values, not Figma node measurements. Compact navigation, green/paper colors, reader metrics and control corners are deliberate product adaptations.
+## Typography and bundled font
 
-## Production components and state contracts
-
-| AX component | Material foundation | Implemented variants and behavior |
+| Use | Family | Size / leading |
 | --- | --- | --- |
-| `AxCard` | Clickable `Card` | Default/selected, paired colors, 1/2dp outline and selected semantics. Used for articles and publisher collections. |
-| `AxCardFrame` | Non-clickable `Card` | Default/selected container for saved records with independent body and secondary actions. The frame does not intercept their clicks. |
-| `AxButton` | `Button` | Primary, enabled/disabled/loading. Loading blocks duplicate invocation, retains content, adds progress and exposes a polite “처리 중” state. The memo Save call site uses full width. |
-| `AxOutlinedButton` | `OutlinedButton` | Secondary, enabled/disabled; used for date selection and cache management. |
-| `AxTextButton` | `TextButton` | Low-emphasis/destructive, enabled/disabled. Destructive color complements an explicit label and existing confirmation. |
-| `AxFilterChip` | `FilterChip` | Selected/unselected/disabled, selected check mark, selection semantics and paired colors; minimum 48 × 48dp. |
-| `AxTextField` | `OutlinedTextField` | Empty/filled/error/read-only/disabled, optional labels/supporting text/icons. Error gets a warning icon unless the caller supplies a trailing icon. Single/multiline behavior is caller-controlled. |
-| `AxNotice` | `Surface`, icon and text | Information/warning/error using separate role pairs and visible messages. |
-| `AxEmptyState` | Text composition | Title and specific next-step guidance. Actions remain with the owning screen. |
+| Journal heading | Nanum Myeongjo Regular | 30sp / 40sp |
+| Screen title | Nanum Myeongjo Regular | 24sp / 34sp |
+| Article index title | System sans, semibold | 16sp / 24sp |
+| Body / controls | System sans | 16/24, 14/20, 12/16 |
+| Reader title | Nanum Myeongjo Regular | 32 / 44 |
+| Reader body | System sans | 18 / 30 |
+| Reader h2 | Nanum Myeongjo Regular | 24 / 34 |
+| Reader pullquote | Nanum Myeongjo Regular | 22 / 34 |
 
-Focus, hover where supported, press/ripple and native disabled behavior come from the installed Material controls. There is no separate interaction engine or copied opacity table. Domain card content must still provide adequate target bounds; a generic empty `AxCard` does not enforce a 48dp minimum.
+Compose uses scalable `sp`; WebView type uses CSS pixels with unitless leading and system text zoom. Layout uses `dp` and CSS pixels respectively. Article rows use compact sans titles like the concept; the journal and reading headlines supply its serif identity. No font-size shrink-to-fit is used. Bounded list excerpts still lead to full article content.
 
-These components serve Notes, Library, search, reader actions, memo editing, settings and dialogs. Article titles/excerpts and memo summaries have intentional bounded previews; full content remains in the reader/editor. Bookmark state uses the existing icon-and-label action with spoken state, not a new `AxIconToggle` class.
+Korean serif appearance must not depend on a device's generic serif fallback. The app bundles the **unmodified Nanum Myeongjo Regular** font from the [official Google Fonts repository](https://github.com/google/fonts/tree/main/ofl/nanummyeongjo), copyright 2010 NHN Corporation, under SIL Open Font License 1.1. The original font contains all 11,172 modern Hangul syllables. No glyph subset, outline modification or renamed font family was produced.
 
-## Product meaning and adaptive layout
+- File: `app/src/main/res/font/nanum_myeongjo_regular.ttf`
+- SHA-256: `7ed9e8653a8ed04285d51dc343ffea6eb3d9c73afc27383ea8929ee4ffd03205`
+- Original copyright and license: [packaged OFL text](../app/src/main/assets/licenses/NanumMyeongjo-OFL.txt)
+- Users can read the full license offline in Settings → 글꼴 라이선스.
 
-- Notes classification follows publisher-authored **series/project** IDs, titles and order. This work does not introduce a category hierarchy, free-form tag editor or a new data model. Missing taxonomy must not invent membership from titles.
-- Bookmarks, linked memos, reading reminders and cached bodies remain distinct. “본문 저장됨” means cached text, not a bookmark or completed-reading flag.
-- Empty/loading/unavailable/offline/retry flows remain screen-owned. A catalogue error notice is not evidence that every application failure uses it. Preserve draft/discard protection, selection and reading/list position.
-- Compact navigation remains the requested **56dp icon-only content bar plus system inset**. This is an AX adaptation, not the stock Material navigation height. Retain spoken labels, selected/tab semantics and at least 48dp interactive targets.
-- Below 600dp: one pane and compact navigation. At 600dp: a scrollable rail. At 840dp and at least 480dp height: list/detail. At 150%+ text, the two-pane threshold becomes 1000dp. Rail width is 96dp normally and 112dp at large text. See [ADAPTIVE_DESIGN.md](ADAPTIVE_DESIGN.md) for the existing policy.
-- Reader outer space is capped at **880dp**. HTML has a centered **764 CSS-pixel border-box column**, including responsive 18–32px horizontal padding. Native fallback has the corresponding **764dp** cap. Other single-pane pages use the 760dp cap. The earlier exploratory 680dp suggestion is not the implemented contract.
+Compose and the native fallback resolve that resource directly. The WebView serves the same bytes only for an exact synthetic HTTPS font URL. That URL never reaches the network. CSP permits only that font endpoint; unknown paths, query variants and non-GET requests on the synthetic host are blocked. File/content access, JavaScript and mixed content remain disabled. Public HTTPS article images retain the existing network behavior. No extra font-service request, dependency or user-data transmission is introduced.
 
-Reader font sizes use CSS pixels in WebView and `sp` in native fallback; layouts use CSS pixels and `dp`, respectively. HTML leading is a unitless ratio so 18/30 scales with text zoom. Native fallback also updates for theme and font scale. Images fit the column; code/tables can scroll horizontally. Active Material roles supply HTML background, body/link/supporting text and code surfaces. Sanitized content, restrictive WebView settings and the content-security policy are retained.
+## Rhythm, controls and navigation
 
-The notebook/AX launcher icon and archive-box Library icon remain the candidate's vector assets. Their presence does not imply imported Figma artwork.
+- Page margin 24dp; spacing scale 4, 8, 12, 16, 20, 24, 32dp.
+- Article rows have 16dp vertical space, a small ordinal gutter, title, excerpt and factual publisher/date/cache/bookmark metadata.
+- Rows have square corners. Buttons/inputs/filters use 4dp, dialogs 8dp. No content shadow or repeated filled-card grid.
+- Thin section rules and 48dp-minimum underlined tabs replace large classification pills. Both Notes and Library expose a selectable group.
+- Phone navigation is still a 56dp icon-only content bar plus system inset. Notes, Library, Search and Settings now share it; each has a spoken label, tab role and 48dp-minimum target. Selection is a small ink dot. Search also has a useful journal-page shortcut.
+- Tablet rail is 72dp, or 88dp at 150%+ text, with a masthead and named icon destinations. It remains scrollable in short windows.
+- Save, loading, disabled, destructive, warning and input-error states keep native Material behavior and explicit messages. A visually quiet control is still a full-size touch target.
 
-## Catalogue, export and verification scope
+## Reader and margin notes
 
-[Debug Compose previews](../app/src/debug/java/net/msalt/axnotes/ui/AxDesignSystemPreviews.kt) declare 360dp light/dark, 200% text and 840dp catalogue configurations, using production components. Tooling dependencies are debug-only and use the existing Compose BOM. Declaring previews is not evidence that Android Studio rendered them or that a device was exercised.
+The header shows a real publisher-provided collection title when available, otherwise AX NOTES, followed by title and publication date. Headings, pullquotes and metadata rules establish the long-form rhythm. Code blocks and tables scroll horizontally; images fit the reading column. No arbitrary reading time, completion percentage, streak or “continue reading” claim is fabricated from the conceptual illustration.
 
-Automated contracts are defined in:
+Bookmark, memo, reminder and share actions remain available. The lower reader margin exposes cached-body information, the actual linked-memo count and a direct “메모 남기기” action. Direct entry uses the existing editor, save return and dirty-draft protection. Cached body status is not a bookmark or completed-reading state.
 
-- [AxDesignSystemTest](../app/src/test/java/net/msalt/axnotes/ui/AxDesignSystemTest.kt): paired-color contrast, explicit type roles, scalable units, spacing, shapes and component dimensions.
-- [AxComponentsTest](../app/src/test/java/net/msalt/axnotes/ui/AxComponentsTest.kt): component semantics, target bounds, repeated/disabled/loading actions, input/selection, independent saved-card actions and long Korean text at 200% with native font measurement under Robolectric.
-- [AxReaderStyleTest](../app/src/test/java/net/msalt/axnotes/AxReaderStyleTest.kt): theme mapping, HTML typography/layout, unitless leading, escaping/security policy and fallback updates.
-- Existing app/adaptive suites: navigation, drafts, selection, bookmarks/memos/reminders and window changes.
+The outer reader is capped at 880dp. HTML is centered in a 764 CSS-pixel border-box column with responsive 18–32px horizontal padding; native fallback matches the column policy. Body/title colors update when an existing view changes theme. Native text remains selectable, and fallback title styling responds to font scale.
 
-Run `python scripts/export-design-tokens.py --check` for drift, then the repository aggregate `./gradlew testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest`. Results and the exact candidate belong in [RELEASE_0.3.0.md](RELEASE_0.3.0.md); no pending aggregate is treated as passed here. Earlier results do not automatically cover the follow-up.
+## Preserved product contracts
 
-Device/emulator WebView rendering, images, TalkBack, keyboard/touch behavior, fold hinges and performance still need device evidence. A static contrast test, Robolectric flow, compiled instrumentation APK or vector preview is not physical-device certification. [Android accessibility guidance](https://developer.android.com/develop/ui/compose/accessibility/api-defaults) informs control checks; [WCAG text contrast](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum) explains the 4.5:1 normal-text threshold.
+- Real feed remains the default; historical sample preference migration, refresh throttling and accessibility refresh are unchanged.
+- Series/projects use publisher-authored IDs, names and order. Missing metadata does not infer groups from titles.
+- Bookmarks, linked memos, reading reminders and downloaded bodies remain distinct.
+- Content/personal database schemas, migrations, package ID and unpublished version `0.3.0` / code `3` are unchanged by this visual follow-up.
+- Below 600dp: compact navigation. At 600dp: rail. At 840dp with height ≥480dp: list/detail; at 150%+ text the split threshold remains 1000dp. Existing draft, list and reader-position protections remain. See [adaptive design](ADAPTIVE_DESIGN.md).
+- No book model, reading-progress persistence, account, sync, Figma integration, merge, deployment or installation on a user's device is added.
 
-## Attribution and licensing boundaries
+## Verification
 
-Design reference: **Material 3 Design Kit, Google / Material Design**, [original Community resource](https://www.figma.com/community/file/1035203688168086460/material-3-design-kit). AX's local work defines its palette, density, type adaptation, reader presentation and domain compositions. No Community design assets were downloaded or copied during this work.
+Tests cover semantic contrast, explicit type families and sizes, shapes, token drift, component selection/action states, 200% Korean layout, navigation/collections, direct margin-note save/discard behavior, reader metadata escaping, font request boundaries, fallback scaling/theme updates and existing data/adaptive flows.
 
-[Figma's Community licensing policy](https://help.figma.com/hc/en-us/articles/360042296374-Figma-Community-copyright-and-licensing) states that free Community files use CC BY 4.0 and require creator attribution; creators may offer additional licenses. This is the verified **general policy**, not a claim that this session inspected the selected file's individual license panel. Confirm current resource-specific terms before importing or redistributing assets, and retain creator/source/license/change notices as applicable. [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) is linked for that attribution workflow.
-
-The comparator's [SDS code license](https://github.com/figma/sds/blob/main/LICENSE) is MIT, but no SDS code is incorporated. Code dependencies and design resources have separate obligations. This document does **not** select, replace or declare an AX Notes repository license, or assert that Google's code and every Figma asset share one license.
-
-## Version and installation identity
-
-This extends the same unpublished `0.3.0` candidate, versionCode `3`. Debug application ID remains `net.msalt.axnotes.internal`; removing the visible version suffix does not rename the data namespace or make a production release. In-place updates still require the installed signing key. No release, uninstall, data reset or device installation is part of this design-system documentation.
+Run `./gradlew testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest compileReleaseKotlin`, the token drift check and the Python export tests. Exact results and screenshot coverage belong in [RELEASE_0.3.0.md](RELEASE_0.3.0.md). A compiled preview or instrumentation APK is not evidence of device execution; software-emulator evidence is not a physical-device/TalkBack certification.

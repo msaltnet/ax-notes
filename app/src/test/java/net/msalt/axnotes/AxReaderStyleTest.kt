@@ -1,22 +1,36 @@
 package net.msalt.axnotes
 
 import android.content.Context
+import android.graphics.Paint
 import android.graphics.drawable.ColorDrawable
+import android.text.Selection
+import android.text.Spannable
+import android.text.Spanned
+import android.text.TextPaint
+import android.text.style.ForegroundColorSpan
+import android.text.style.LineHeightSpan
+import android.text.style.RelativeSizeSpan
 import android.view.Gravity
+import android.view.View
 import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.test.core.app.ApplicationProvider
+import androidx.core.content.res.ResourcesCompat
 import net.msalt.axnotes.data.Article
 import net.msalt.axnotes.ui.AxDarkColors
 import net.msalt.axnotes.ui.AxLightColors
 import net.msalt.axnotes.ui.AxReaderStyle
+import net.msalt.axnotes.ui.ReaderEditorialTypefaceSpan
+import net.msalt.axnotes.ui.applyReaderFallbackContent
 import net.msalt.axnotes.ui.applyReaderFallbackLayout
 import net.msalt.axnotes.ui.applyReaderFallbackStyle
 import net.msalt.axnotes.ui.buildReaderFallbackText
 import net.msalt.axnotes.ui.buildReaderHtml
 import net.msalt.axnotes.ui.readerCssColor
+import net.msalt.axnotes.ui.readerFontUrl
+import net.msalt.axnotes.ui.readerResourceResponse
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.junit.Assert.assertEquals
@@ -58,7 +72,10 @@ class AxReaderStyleTest {
             assertEquals(colors.surfaceContainer.readerCssColor(), cssRule(document, "pre")["background"])
             assertEquals(colors.onSurface.readerCssColor(), cssRule(document, "pre")["color"])
             assertEquals("1px solid ${colors.outlineVariant.readerCssColor()}", cssRule(document, "td,th")["border"])
-            assertEquals("3px solid ${colors.outlineVariant.readerCssColor()}", cssRule(document, "blockquote")["border-left"])
+            assertEquals("2px solid ${colors.primary.readerCssColor()}", cssRule(document, "blockquote")["border-left"])
+            assertEquals(colors.onSurfaceVariant.readerCssColor(), cssRule(document, "blockquote")["color"])
+            assertEquals("1px solid ${colors.outlineVariant.readerCssColor()}", cssRule(document, ".article-header")["border-bottom"])
+            assertEquals("1px solid ${colors.outlineVariant.readerCssColor()}", cssRule(document, "h2")["border-top"])
             assertEquals(colors.onSurfaceVariant.readerCssColor(), cssRule(document, "figcaption,.meta")["color"])
             assertFalse("Supporting text must use an opaque semantic role", document.selectFirst("style")!!.data().contains("opacity"))
         }
@@ -88,8 +105,10 @@ class AxReaderStyleTest {
     fun htmlUsesTheSharedReadingTypographyAndResponsivePageTokens() {
         val document = Jsoup.parse(buildReaderHtml(article, AxLightColors))
         assertTypography(document, "body", 18, 30)
-        assertTypography(document, "h1", 28, 36)
-        assertTypography(document, "h2,h3", 22, 28)
+        assertTypography(document, "h1", 32, 44)
+        assertTypography(document, "h2", 24, 34)
+        assertTypography(document, "h3,h4,h5,h6", 22, 32)
+        assertTypography(document, "blockquote", 22, 34)
         assertTypography(document, "pre", 14, 22)
         assertTypography(document, "code,kbd", 14, 22)
         assertTypography(document, "table", 14, 20)
@@ -112,7 +131,8 @@ class AxReaderStyleTest {
         assertEquals(0, heading.childrenSize())
         assertTrue(document.select("script,img").isEmpty())
         assertTrue(html.contains(article.bodyHtml!!))
-        assertEquals("AX NOTES · 2026-10-10", document.selectFirst(".meta")!!.text())
+        assertEquals("AX NOTES", document.selectFirst(".eyebrow")!!.text())
+        assertEquals("2026-10-10", document.selectFirst(".meta time")!!.text())
         assertEquals("https://ax.msalt.net/about/", document.selectFirst("a")!!.attr("href"))
         assertEquals("ko", document.selectFirst("html")!!.attr("lang"))
     }
@@ -122,7 +142,7 @@ class AxReaderStyleTest {
         listOf(AxLightColors, AxDarkColors).forEach { colors ->
             val document = Jsoup.parse(buildReaderHtml(article, colors))
             assertEquals(
-                "default-src 'none'; img-src https:; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'",
+                "default-src 'none'; img-src https:; font-src $readerFontUrl; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'",
                 document.selectFirst("meta[http-equiv=Content-Security-Policy]")!!.attr("content")
             )
             assertTrue(document.select("script,iframe,form,base").isEmpty())
@@ -179,6 +199,134 @@ class AxReaderStyleTest {
         val uncached = article.copy(bodyHtml = null, bodyText = null)
         assertFalse(buildReaderFallbackText(uncached).contains("null"))
         assertFalse(buildReaderHtml(uncached, AxLightColors).contains("null"))
+    }
+
+
+    @Test
+    fun editorialHierarchyUsesTheBundledSerifWithoutChangingTheSansBody() {
+        val document = Jsoup.parse(buildReaderHtml(article, AxLightColors))
+        assertEquals("system-ui,sans-serif", cssRule(document, "body")["font-family"])
+        assertEquals("'AX Editorial','Noto Serif CJK KR',serif", cssRule(document, "h1,h2,h3,h4,h5,h6,blockquote")["font-family"])
+        assertEquals("400", cssRule(document, "h1,h2,h3,h4,h5,h6,blockquote")["font-weight"])
+        assertEquals("url('$readerFontUrl') format('truetype')", cssRule(document, "@font-face")["src"])
+        assertEquals("swap", cssRule(document, "@font-face")["font-display"])
+        assertEquals("4px", cssRule(document, "pre")["border-radius"])
+        assertEquals("0 0 40px", cssRule(document, ".article-header")["margin"])
+        assertEquals("underline", cssRule(document, "a")["text-decoration"])
+        assertFalse(document.selectFirst("style")!!.data().contains("user-select:none"))
+        assertEquals(1, document.select("main > article > header.article-header > h1").size)
+    }
+
+    @Test
+    fun onlyRealFeedTaxonomyAppearsInTheEyebrowAndItIsEscaped() {
+        val projectTitle = "실험 <img src=x onerror='steal()'> & 기록"
+        val project = Jsoup.parse(buildReaderHtml(article.copy(projectTitle = projectTitle), AxLightColors))
+        assertEquals(projectTitle, project.selectFirst(".eyebrow")!!.text())
+        assertEquals(0, project.selectFirst(".eyebrow")!!.childrenSize())
+        val series = Jsoup.parse(buildReaderHtml(article.copy(seriesTitle = "개발 노트"), AxLightColors))
+        assertEquals("개발 노트", series.selectFirst(".eyebrow")!!.text())
+        val header = Jsoup.parse(buildReaderHtml(article, AxLightColors)).selectFirst(".article-header")!!
+        assertEquals("AX NOTES ${article.title} 2026-10-10", header.text())
+        assertFalse(header.text().contains("분"))
+        assertFalse(header.text().contains("%"))
+    }
+
+    @Test
+    fun bundledFontIsServedOnlyForItsExactGetSubresourceAndNeverFetched() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val response = readerResourceResponse(context, readerFontUrl, isMainFrame = false, method = "GET")!!
+        assertEquals("font/ttf", response.mimeType)
+        assertEquals(200, response.statusCode)
+        assertEquals("*", response.responseHeaders["Access-Control-Allow-Origin"])
+        val bundledBytes = context.resources.openRawResource(R.font.nanum_myeongjo_regular).use { it.readBytes() }
+        assertTrue(bundledBytes.isNotEmpty())
+        assertTrue(response.data.use { it.readBytes() }.contentEquals(bundledBytes))
+        listOf(
+            readerFontUrl to true,
+            "$readerFontUrl?redirect=other" to false,
+            "$readerFontUrl#fragment" to false,
+            "https://appassets.androidplatform.net/ax-font/other.ttf" to false,
+            "https://APPASSETS.ANDROIDPLATFORM.NET/unknown" to false,
+            "file:///android_res/font/nanum_myeongjo_regular.ttf" to false,
+            "content://fonts/editorial" to false,
+            "http://example.com/image.png" to false,
+            "https://example.com/page" to true
+        ).forEach { (url, mainFrame) ->
+            val blocked = readerResourceResponse(context, url, mainFrame, "GET")!!
+            assertEquals("Blocked resource $url", 0, blocked.data.use { it.readBytes().size })
+        }
+        val post = readerResourceResponse(context, readerFontUrl, isMainFrame = false, method = "POST")!!
+        assertEquals(0, post.data.use { it.readBytes().size })
+        // Existing HTTPS article images still use WebView's normal request path and CSP.
+        assertEquals(null, readerResourceResponse(context, "https://ax.msalt.net/image.png", false, "GET"))
+    }
+
+    @Test
+    fun nativeFallbackUsesTheSameBundledTitleFontAndPreservesSelectionOnThemeChanges() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val view = TextView(context).apply { setTextIsSelectable(true) }
+        applyReaderFallbackStyle(view, AxLightColors, fontScale = 1f)
+        applyReaderFallbackContent(view, article, AxLightColors)
+        val styled = view.text as Spanned
+        val titleStart = styled.toString().indexOf(article.title)
+        val titleEnd = titleStart + article.title.length
+        val size = styled.getSpans(titleStart, titleEnd, RelativeSizeSpan::class.java).single()
+        assertEquals(32f / 18f, size.sizeChange, 0.00001f)
+        val titleFont = styled.getSpans(titleStart, titleEnd, ReaderEditorialTypefaceSpan::class.java).single()
+        val paint = TextPaint()
+        titleFont.updateMeasureState(paint)
+        assertEquals(ResourcesCompat.getFont(context, R.font.nanum_myeongjo_regular), paint.typeface)
+        assertTrue(view.isTextSelectable)
+        val bodyStart = styled.toString().indexOf(article.bodyText!!)
+        Selection.setSelection(view.text as Spannable, bodyStart, bodyStart + 3)
+        applyReaderFallbackStyle(view, AxDarkColors, fontScale = 2f)
+        applyReaderFallbackContent(view, article, AxDarkColors)
+        assertEquals(buildReaderFallbackText(article), view.text.toString())
+        assertEquals(bodyStart, view.selectionStart)
+        assertEquals(bodyStart + 3, view.selectionEnd)
+        assertEquals(36f, view.textSize, 0.01f)
+        assertTrue((view.text as Spanned).getSpans(0, view.length(), ForegroundColorSpan::class.java)
+            .all { it.foregroundColor == AxDarkColors.onSurfaceVariant.toArgb() })
+    }
+
+    @Test
+    fun nativeFallbackTitleHasScaledEditorialLeadingWhileBodyLeadingStaysUnchanged() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val view = TextView(context).apply { setTextIsSelectable(true) }
+        val multilineArticle = article.copy(
+            title = "한국어 제목 첫 줄\n한국어 제목 둘째 줄",
+            bodyText = "본문 첫 번째 줄\n본문 두 번째 줄\n본문 세 번째 줄"
+        )
+        // Reuse the same view, article, and colors to exercise font-scale invalidation.
+        listOf(1f, 2f, 1f).forEach { scale ->
+            applyReaderFallbackStyle(view, AxLightColors, scale)
+            applyReaderFallbackContent(view, multilineArticle, AxLightColors)
+            val styled = view.text as Spanned
+            val titleStart = styled.toString().indexOf(multilineArticle.title)
+            val titleEnd = titleStart + multilineArticle.title.length
+            val bodyStart = styled.toString().indexOf(multilineArticle.bodyText!!)
+            val titleLeading = styled.getSpans(titleStart, titleEnd, LineHeightSpan::class.java).single()
+            assertEquals(titleStart, styled.getSpanStart(titleLeading))
+            assertEquals(titleEnd, styled.getSpanEnd(titleLeading))
+            assertTrue(styled.getSpans(bodyStart, styled.length, LineHeightSpan::class.java).isEmpty())
+            val metrics = Paint.FontMetricsInt().apply { ascent = -20; descent = 4; top = -20; bottom = 4 }
+            titleLeading.chooseHeight(styled, titleStart, titleEnd, 0, 0, metrics)
+            assertTrue(metrics.descent - metrics.ascent + view.lineSpacingExtra >= 44f * scale)
+            assertEquals((30 * scale).toInt(), view.lineHeight)
+
+            view.measure(View.MeasureSpec.makeMeasureSpec(1000, View.MeasureSpec.EXACTLY),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED))
+            view.layout(0, 0, view.measuredWidth, view.measuredHeight)
+            val layout = view.layout
+            val firstTitleLine = layout.getLineForOffset(titleStart)
+            val lastTitleLine = layout.getLineForOffset(titleEnd - 1)
+            for (line in firstTitleLine..lastTitleLine) {
+                assertTrue("Title line must be at least 44sp at scale $scale",
+                    layout.getLineBottom(line) - layout.getLineTop(line) >= 44 * scale)
+            }
+            val bodyLine = layout.getLineForOffset(bodyStart)
+            assertEquals((30 * scale).toInt(), layout.getLineBottom(bodyLine) - layout.getLineTop(bodyLine))
+        }
     }
 
     private fun assertTypography(document: Document, selector: String, fontSize: Int, lineHeight: Int) {

@@ -63,3 +63,29 @@ Build9's own emulator regression was still pending at this review handoff. Track
 ## Subsequent clean-build result recorded by implementation owner
 
 After the reviewed incremental build, `clean assembleDebug assembleDebugAndroidTest testDebugUnitTest lintDebug` executed all 86 tasks successfully. Regenerated test XML totals 52 passed, 0 failures/errors/skips. Final regenerated lint XML contains 8 warnings and 0 errors; the earlier four online GradleDependency suggestions did not appear in this clean report. The final APK is 10,474,638 bytes, SHA-256 `b67160f935d66c455350ad310efa355df865cc6b4c6dee95d3cbe680654b42b2`. This paragraph records the owner's later tool evidence, not an additional independent rerun. Final emulator scope is maintained in EMULATOR_REPORT.md.
+
+## Approved editorial follow-up review — 2026-10-10
+
+This section supersedes the older visual direction and candidate-specific automated counts above for the editorial follow-up to `f2221fa`. The independent reviewer inspected the approved concept's actual pixels and final production, test and documentation changes.
+
+**No blocking source or security findings remain.** Earlier review feedback was resolved: compact sans article titles and spacing, a selectable Library tab group, a direct margin-note save/discard regression, and true Android font-scale masthead coverage. The review covered feed/collection navigation, bookmarks, memo protections, reminder preservation, tablet policy, native fallback selection/leading and OFL packaging.
+
+The reader's font interception serves only the fixed packaged font for its exact GET subresource. Synthetic-host variants are blocked, CSP remains restrictive, title/taxonomy text is escaped, and JavaScript/file/content/mixed-content restrictions remain intact. No fabricated reading progress or remote font service was introduced. The narrowly scoped `ResourceType` suppression documents valid raw-byte access to the packaged font; it does not hide unrelated resource checks.
+
+Checks executed by the independent reviewer:
+
+- `git diff --check` for authored files; the verbatim upstream OFL license contains original trailing spaces and is excluded from that formatting check.
+- Generated-token drift check
+- All 11 Python token exporter/mutation tests
+
+Implementation artifacts independently inspected, not rerun by the reviewer:
+
+- Aggregate Gradle log: `testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest compileReleaseKotlin` completed successfully.
+- JUnit XML: 16 suites, **122 tests**, zero failures, errors or skips.
+- Lint XML: zero errors and nine advisories (five KTX suggestions, four update notices for unchanged dependencies).
+- Debug/instrumentation APK assembly and release Kotlin compilation.
+- Independently calculated debug APK SHA-256: `edd2ba81caac1bb57bf3e60072fe5cd7c6487df8f6529be4dbbfa2d18227be01`.
+
+The reviewer inspected the final light-phone, dark-reader, 200%-text and tablet split screenshots and the pulled-back installed-APK hash. These captures pass visual review: the serif/sans hierarchy, thin rules, toolbar/footer and compact navigation render without overlay, overlap or unintended clipping. Large-text metadata wraps; rows below the viewport remain scrollable. The dark article is rendered by the actual WebView, not a preview. Content was explicitly imported from the current public snapshot because emulator DNS failed; this is cached-content visual evidence only.
+
+Visual evidence and remaining runtime limits are recorded in [RELEASE_0.3.0.md](RELEASE_0.3.0.md). Automated, source and software-emulator visual review are not physical-device or TalkBack certification.

@@ -3,7 +3,7 @@
 The app's design-system source is Kotlin, not a disconnected mockup:
 
 - `AxDesignSystem.kt`: paired light/dark colors, complete type scale, spacing, shapes and component dimensions.
-- `AxComponents.kt`: actual reusable cards, action hierarchy, filters, input and status/empty components used by the app.
+- `AxComponents.kt`: actual ruled content rows, underlined section tabs, action hierarchy, filters, input and status/empty components used by the app.
 - `AxReaderStyle.kt`: long-form type/layout and HTML color mapping, shared with the native-text fallback.
 - `AxDesignSystemCatalog.kt`: an executable catalogue of those same components and states. It is a development/test surface, not a new app destination.
 
@@ -22,11 +22,12 @@ The JSON is a handoff reference, **not a verified Figma plugin/import format**. 
 | Family | Variants / states |
 | --- | --- |
 | Action | primary, outlined, text, destructive; enabled, disabled, loading |
-| Content card | default, selected; independent body and secondary actions |
+| Ruled content row | default, selected leading rule; independent body and secondary actions |
+| Section tab | selected underline, tab semantics and full touch target |
 | Filter | selected, unselected, disabled; long Korean label |
 | Input | empty, filled, error with supporting text/icon, read-only, disabled |
 | Status | information, warning, error, empty state with next-action guidance |
 
 Focus, press/ripple and native disabled semantics come from Material 3 controls, rather than an independent interaction engine. Compact navigation and reading typography are deliberate AX adaptations. Existing tablet navigation, reader position and draft protections remain in the app's flow tests.
 
-See [the design-system specification](../docs/DESIGN_SYSTEM.md) for the selected Figma Community kit, source attribution, AX deviations and verification limits.
+See [the design-system specification](../docs/DESIGN_SYSTEM.md) for the approved editorial direction, public inspiration references, bundled-font attribution and verification limits.

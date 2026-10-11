@@ -36,13 +36,14 @@ class AxDesignSystemTest {
             assertTrue("$name line height must also scale", style.lineHeight.isSp)
             assertTrue("$name must not be smaller than 11sp", style.fontSize.value >= 11f)
             assertTrue("$name requires at least 1.2x leading", style.lineHeight.value >= style.fontSize.value * 1.2f)
-            assertEquals("$name uses the system family with Korean fallback", FontFamily.SansSerif, style.fontFamily)
+            val editorial = name.startsWith("display") || name.startsWith("headline") || name == "titleLarge"
+            assertEquals("$name uses its explicit editorial or control family", if (editorial) AxEditorialFont else FontFamily.SansSerif, style.fontFamily)
         }
         assertEquals(16.sp, AxTypography.bodyLarge.fontSize)
         assertEquals(24.sp, AxTypography.bodyLarge.lineHeight)
         assertEquals(14.sp, AxTypography.labelLarge.fontSize)
         assertEquals(20.sp, AxTypography.labelLarge.lineHeight)
-        assertEquals(FontWeight.SemiBold, AxTypography.titleLarge.fontWeight)
+        assertEquals(FontWeight.Normal, AxTypography.titleLarge.fontWeight)
     }
 
     @Test
@@ -55,14 +56,28 @@ class AxDesignSystemTest {
         assertTrue(AxSize.railItemMinHeight >= AxSize.minTouch)
         assertEquals(56.dp, AxSize.bottomNavigation)
         assertEquals(AxSpacing.lg, AxComponentTokens.cardPadding)
-        assertEquals(AxSpacing.md, AxComponentTokens.cardGap)
+        assertEquals(0.dp, AxComponentTokens.cardGap)
         assertEquals(AxSpacing.sm, AxComponentTokens.controlGap)
         assertEquals(1.dp, AxComponentTokens.outlineWidth)
-        assertEquals(2.dp, AxComponentTokens.selectedOutlineWidth)
+        assertEquals(3.dp, AxComponentTokens.selectedOutlineWidth)
         assertTrue(AxComponentTokens.selectedOutlineWidth > AxComponentTokens.outlineWidth)
         assertEquals(RoundedCornerShape(AxSize.cardRadius), AxShapes.large)
         assertEquals(RoundedCornerShape(AxSize.dialogRadius), AxShapes.extraLarge)
         assertEquals(RoundedCornerShape(AxSize.inputRadius), AxShapes.medium)
+    }
+
+    @Test
+    fun editorialHierarchyUsesBundledSerifWithoutShrinkingControls() {
+        assertEquals(30.sp, AxTypography.headlineMedium.fontSize)
+        assertEquals(40.sp, AxTypography.headlineMedium.lineHeight)
+        assertEquals(16.sp, AxTypography.titleMedium.fontSize)
+        assertEquals(FontFamily.SansSerif, AxTypography.titleMedium.fontFamily)
+        assertEquals(FontFamily.SansSerif, AxTypography.bodyLarge.fontFamily)
+        assertEquals(FontFamily.SansSerif, AxTypography.labelLarge.fontFamily)
+        assertEquals(0.dp, AxSize.cardRadius)
+        assertTrue(listOf(AxSize.buttonRadius, AxSize.filterRadius, AxSize.inputRadius, AxSize.dialogRadius).all { it <= 8.dp })
+        assertEquals(24.dp, AxComponentTokens.pageMargin)
+        assertEquals(72.dp, AxSize.railWidth)
     }
 
     private fun assertTextContrast(theme: String, scheme: ColorScheme) {

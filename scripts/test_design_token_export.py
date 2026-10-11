@@ -35,6 +35,13 @@ class DesignTokenExportTest(unittest.TestCase):
         self.assertEqual("serif", result["typography"]["bodyLarge"]["$value"]["fontFamily"])
         self.assertNotEqual(json.loads(EXPORTER.export()), result)
 
+    def test_editorial_font_resource_and_body_remain_distinct(self):
+        result = json.loads(EXPORTER.export())
+        self.assertEqual("Nanum Myeongjo", result["typography"]["headlineMedium"]["$value"]["fontFamily"])
+        self.assertEqual("sans-serif", result["typography"]["bodyLarge"]["$value"]["fontFamily"])
+        with self.assertRaisesRegex(ValueError, "editorial font family"):
+            self.mutated_export("AxDesignSystem.kt", "R.font.nanum_myeongjo_regular", "R.font.unverified")
+
     def test_unsupported_letter_spacing_is_rejected(self):
         with self.assertRaisesRegex(ValueError, "letterSpacing"):
             self.mutated_export("AxDesignSystem.kt", "letterSpacing = 0.sp", "letterSpacing = 0.1.em")
@@ -45,7 +52,7 @@ class DesignTokenExportTest(unittest.TestCase):
 
     def test_color_expression_cannot_be_silently_omitted(self):
         with self.assertRaisesRegex(ValueError, "color declaration"):
-            self.mutated_export("AxDesignSystem.kt", "primary = Color(0xFF315E50)", "primary = Color.Green")
+            self.mutated_export("AxDesignSystem.kt", "primary = Color(0xFF40563B)", "primary = Color.Green")
 
     def test_dimension_division_cannot_be_mistaken_for_a_comment(self):
         with self.assertRaisesRegex(ValueError, "token expression"):

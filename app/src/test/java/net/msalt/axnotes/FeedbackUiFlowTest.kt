@@ -52,6 +52,7 @@ class FeedbackUiFlowTest {
             // a new Application for each test. Reset only that factory's test-global
             // cache before MainActivity starts so database/personal state cannot leak.
             resetViewModelFactoryApplication()
+            org.robolectric.RuntimeEnvironment.setFontScale(1f)
             val context = ApplicationProvider.getApplicationContext<Context>()
             context.getSharedPreferences("settings", Context.MODE_PRIVATE).edit()
                 .putBoolean("sample", true)
@@ -66,6 +67,7 @@ class FeedbackUiFlowTest {
         override fun after() {
             WorkManagerTestInitHelper.closeWorkDatabase()
             resetViewModelFactoryApplication()
+            org.robolectric.RuntimeEnvironment.setFontScale(1f)
         }
     }
 
@@ -88,7 +90,7 @@ class FeedbackUiFlowTest {
         compose.onNodeWithTag("bottom_navigation").assertExists()
         compose.onNodeWithTag("navigation_rail").assertDoesNotExist()
 
-        listOf("notes" to "Notes", "library" to "내 보관함").forEach { (route, label) ->
+        listOf("notes" to "Notes", "library" to "내 보관함", "search" to "검색", "settings" to "설정").forEach { (route, label) ->
             // Destination bounds measure the 56dp content, excluding the system bar inset.
             compose.onNodeWithTag("nav_$route")
                 .assertContentDescriptionEquals(label)
@@ -110,6 +112,74 @@ class FeedbackUiFlowTest {
         compose.onNodeWithContentDescription("Notes").performClick()
         compose.onNodeWithTag("nav_notes").assertIsSelected()
         compose.onNodeWithTag("notes_list").assertExists()
+    }
+
+    @Test
+    @org.robolectric.annotation.GraphicsMode(org.robolectric.annotation.GraphicsMode.Mode.NATIVE)
+    fun editorialMastheadGrowsAtTwoHundredPercentWithoutClippingOrShrinkingText() {
+        val baseline = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
+        compose.onNodeWithText("AX.", useUnmergedTree = true)
+            .performSemanticsAction(SemanticsActions.GetTextLayoutResult) { action -> action(baseline) }
+        val baselineHeight = baseline.single().size.height
+        // Change the actual Android font configuration, including the platform
+        // font resolver, rather than only replacing Compose's LocalDensity.
+        compose.runOnIdle { org.robolectric.RuntimeEnvironment.setFontScale(2f) }
+        compose.activityRule.scenario.recreate()
+        val layouts = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
+        compose.waitUntil(5000) {
+            layouts.clear()
+            compose.onNodeWithText("AX.", useUnmergedTree = true)
+                .performSemanticsAction(SemanticsActions.GetTextLayoutResult) { action -> action(layouts) }
+            layouts.singleOrNull()?.layoutInput?.density?.fontScale == 2f
+        }
+        val layout = layouts.single()
+        compose.onNodeWithText("AX.", useUnmergedTree = true).assertIsDisplayed()
+        // A single line trims outer leading; compare actual glyph layout growth
+        // rather than requiring the nominal inter-line height on its outer bounds.
+        assertTrue("System text must enlarge the masthead: ${layout.size.height} <= $baselineHeight", layout.size.height > baselineHeight)
+        assertFalse("Editorial masthead must have room for scaled leading", layout.didOverflowHeight)
+        assertEquals(1, layout.lineCount)
+        assertEquals(3, layout.getLineEnd(0, visibleEnd = true))
+        // Text in a wrap-content Row can retain a wider paragraph constraint even
+        // when every glyph fits. Check the actual rendered line, not that constraint.
+        assertTrue("Every masthead glyph must fit its bounds", layout.getLineRight(0) <= layout.size.width + 1f)
+        listOf("notes", "library", "search", "settings").forEach { route ->
+            compose.onNodeWithTag("nav_$route").assertIsDisplayed().assertHeightIsEqualTo(56.dp)
+        }
+    }
+
+    @Test
+    fun editorialSearchShortcutAndMarginMemoUseExistingProtectedFlows() {
+        waitForInitialFeed()
+        compose.onNodeWithText("실험을 읽는 시간").assertIsDisplayed()
+        compose.onNodeWithTag("notes_search").assertHeightIsAtLeast(48.dp).performClick()
+        compose.onNodeWithText("글과 메모에서 검색").assertExists()
+        compose.onNodeWithContentDescription("뒤로").performClick()
+        openArticle(sampleTitle)
+        compose.onNodeWithText("연결된 메모 0").performScrollTo().assertHasClickAction()
+        compose.onNodeWithText("메모 남기기").performScrollTo().performClick()
+        compose.onNodeWithTag("memo_editor").assertExists()
+        compose.onNodeWithText("기억할 생각이나 적용할 아이디어").performTextInput("편집 디자인에서도 지킬 생각")
+        compose.onNodeWithContentDescription("뒤로").performClick()
+        compose.onNodeWithText("저장하지 않은 메모가 있어요").assertExists()
+        compose.onNodeWithText("계속 작성").performClick()
+        compose.onNodeWithText("메모 저장").performScrollTo().performClick()
+        compose.waitUntil(10000) { compose.onAllNodesWithTag("reader_pane").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("연결된 메모 1").performScrollTo().performClick()
+        compose.onNodeWithText("편집 디자인에서도 지킬 생각").assertExists()
+    }
+
+    @Test
+    fun bundledFontLicenseCanBeReadOfflineAndDismissed() {
+        waitForInitialFeed()
+        compose.onNodeWithContentDescription("설정").performClick()
+        compose.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("글꼴 라이선스"))
+        compose.onNodeWithText("글꼴 라이선스").performClick()
+        compose.onNodeWithText("나눔명조 · SIL OFL 1.1").assertExists()
+        compose.onNodeWithText("Copyright (c) 2010, NHN Corporation", substring = true).assertExists()
+        compose.onNodeWithText("닫기").performClick()
+        compose.onNodeWithText("나눔명조 · SIL OFL 1.1").assertDoesNotExist()
+        compose.onNodeWithText("설정 및 소개").assertExists()
     }
 
     @Test

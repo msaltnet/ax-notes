@@ -1,10 +1,21 @@
 package net.msalt.axnotes.ui
 
+import android.annotation.SuppressLint
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.graphics.Paint
 import android.graphics.Typeface
 import android.net.Uri
+import android.text.Selection
+import android.text.Spannable
+import android.text.SpannableString
+import android.text.Spanned
+import android.text.TextPaint
+import android.text.style.ForegroundColorSpan
+import android.text.style.LineHeightSpan
+import android.text.style.MetricAffectingSpan
+import android.text.style.RelativeSizeSpan
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.ViewGroup
@@ -20,9 +31,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.content.res.ResourcesCompat
 import androidx.core.widget.TextViewCompat
+import androidx.core.net.toUri
+import net.msalt.axnotes.R
 import net.msalt.axnotes.data.Article
 import net.msalt.axnotes.data.SafeUrl
+import kotlin.math.ceil
 import kotlin.math.roundToInt
 
 fun openExternal(context: Context, url: String, onError: (String) -> Unit) {
@@ -37,8 +52,84 @@ fun shareArticle(context: Context, title: String, url: String, onError: (String)
     catch (_: ActivityNotFoundException) { onError("공유할 앱이 없습니다") }
 }
 
+private const val readerFallbackExplanation =
+    "시스템 WebView를 사용할 수 없어 텍스트로 표시합니다. 이미지·서식은 시스템 WebView를 활성화한 뒤 확인하세요."
+
 internal fun buildReaderFallbackText(article: Article): String =
-    "시스템 WebView를 사용할 수 없어 텍스트로 표시합니다. 이미지·서식은 시스템 WebView를 활성화한 뒤 확인하세요.\n\n${article.title}\n${article.publishedAt.take(10)}\n\n${article.bodyText.orEmpty()}"
+    "$readerFallbackExplanation\n\n${article.title}\n${article.publishedAt.take(10)}\n\n${article.bodyText.orEmpty()}"
+
+/** TypefaceSpan(Typeface) needs API 28, while AX also supports Android 8. */
+internal class ReaderEditorialTypefaceSpan(private val editorialTypeface: Typeface) : MetricAffectingSpan() {
+    override fun updateDrawState(textPaint: TextPaint) { textPaint.typeface = editorialTypeface }
+    override fun updateMeasureState(textPaint: TextPaint) { textPaint.typeface = editorialTypeface }
+}
+
+/** Keeps title leading independent of body spacing without reducing the font's glyph bounds. */
+private class ReaderTitleLineHeightSpan(private val minimumMetricsHeightPx: Int) : LineHeightSpan {
+    override fun chooseHeight(text: CharSequence, start: Int, end: Int, spanstartv: Int, v: Int, fm: Paint.FontMetricsInt) {
+        val extra = (minimumMetricsHeightPx - (fm.descent - fm.ascent)).coerceAtLeast(0)
+        fm.ascent -= extra / 2
+        fm.descent += extra - extra / 2
+        fm.top = minOf(fm.top, fm.ascent)
+        fm.bottom = maxOf(fm.bottom, fm.descent)
+    }
+}
+
+internal fun applyReaderFallbackContent(view: TextView, article: Article, colors: ColorScheme) {
+    // Style is applied first. Derive the effective scale from its body size so this
+    // also follows a retained TextView when the system font scale changes.
+    val scaledDensity = view.textSize / AxReaderStyle.bodyFontSize
+    val identity = Triple(article, colors.onSurfaceVariant, view.textSize to view.lineSpacingExtra)
+    if (view.tag == identity) return
+    val text = buildReaderFallbackText(article)
+    val selectionStart = view.selectionStart
+    val selectionEnd = view.selectionEnd
+    val preserveSelection = view.text.toString() == text && selectionStart >= 0 && selectionEnd >= 0
+    val titleStart = readerFallbackExplanation.length + 2
+    val titleEnd = titleStart + article.title.length
+    val dateStart = titleEnd + 1
+    val dateEnd = dateStart + article.publishedAt.take(10).length
+    val styled = SpannableString(text).apply {
+        val flags = Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+        setSpan(RelativeSizeSpan(AxReaderStyle.titleFontSize.toFloat() / AxReaderStyle.bodyFontSize), titleStart, titleEnd, flags)
+        // TextView adds its body line-spacing extra after this span's metrics.
+        // Subtract it once here rather than adding body leading to the 44sp title.
+        val titleMetricsHeight = ceil(AxReaderStyle.titleLineHeight * scaledDensity - view.lineSpacingExtra).toInt()
+        setSpan(ReaderTitleLineHeightSpan(titleMetricsHeight), titleStart, titleEnd, flags)
+        ResourcesCompat.getFont(view.context, R.font.nanum_myeongjo_regular)?.let {
+            setSpan(ReaderEditorialTypefaceSpan(it), titleStart, titleEnd, flags)
+        }
+        listOf(0 to readerFallbackExplanation.length, dateStart to dateEnd).forEach { (start, end) ->
+            setSpan(RelativeSizeSpan(AxReaderStyle.supportingFontSize.toFloat() / AxReaderStyle.bodyFontSize), start, end, flags)
+            setSpan(ForegroundColorSpan(colors.onSurfaceVariant.toArgb()), start, end, flags)
+        }
+    }
+    view.text = styled
+    if (preserveSelection) (view.text as? Spannable)?.let { Selection.setSelection(it, selectionStart, selectionEnd) }
+    view.tag = identity
+}
+
+/**
+ * Only this exact font subresource can resolve to packaged bytes. Unknown paths on
+ * the synthetic host are blocked rather than falling through to a network fetch.
+ */
+internal fun readerResourceResponse(context: Context, url: String, isMainFrame: Boolean, method: String): WebResourceResponse? {
+    if (url == readerFontUrl && !isMainFrame && method == "GET") {
+        // Fonts are packaged as uncompiled resource bytes. Android can open them
+        // here even though openRawResource's lint annotation only names R.raw.
+        @SuppressLint("ResourceType")
+        val fontBytes = context.resources.openRawResource(R.font.nanum_myeongjo_regular)
+        return WebResourceResponse(
+            "font/ttf", null, 200, "OK",
+            mapOf("Access-Control-Allow-Origin" to "*"),
+            fontBytes
+        )
+    }
+    if (isMainFrame || !SafeUrl.https(url) || url.toUri().host.equals(readerFontHost, ignoreCase = true)) {
+        return WebResourceResponse("text/plain", "UTF-8", java.io.ByteArrayInputStream(ByteArray(0)))
+    }
+    return null
+}
 
 internal fun applyReaderFallbackStyle(view: TextView, colors: ColorScheme, fontScale: Float) {
     val scaledDensity = view.resources.displayMetrics.density * fontScale
@@ -85,7 +176,6 @@ fun ReaderWebView(article: Article, modifier: Modifier = Modifier, onError: (Str
         article, colors.surface, colors.onSurface, colors.primary,
         colors.surfaceContainer, colors.outlineVariant, colors.onSurfaceVariant
     ) { buildReaderHtml(article, colors) }
-    val fallbackText = remember(article) { buildReaderFallbackText(article) }
     key(article.id) {
         AndroidView(
             modifier = modifier,
@@ -132,10 +222,10 @@ fun ReaderWebView(article: Article, modifier: Modifier = Modifier, onError: (Str
                                 }
 
                                 override fun shouldInterceptRequest(view: WebView?, request: WebResourceRequest?): WebResourceResponse? {
-                                    if (request == null || !SafeUrl.https(request.url.toString()) || request.isForMainFrame) {
-                                        return WebResourceResponse("text/plain", "UTF-8", java.io.ByteArrayInputStream(ByteArray(0)))
-                                    }
-                                    return super.shouldInterceptRequest(view, request)
+                                    return readerResourceResponse(
+                                        context, request?.url?.toString().orEmpty(),
+                                        request?.isForMainFrame ?: true, request?.method.orEmpty()
+                                    ) ?: super.shouldInterceptRequest(view, request)
                                 }
 
                                 override fun onReceivedSslError(view: WebView?, handler: SslErrorHandler?, error: android.net.http.SslError?) {
@@ -188,7 +278,7 @@ fun ReaderWebView(article: Article, modifier: Modifier = Modifier, onError: (Str
                     val textView = child.getChildAt(0) as TextView
                     applyReaderFallbackStyle(textView, colors, fontScale)
                     applyReaderFallbackLayout(textView, child.width)
-                    if (textView.text.toString() != fallbackText) textView.text = fallbackText
+                    applyReaderFallbackContent(textView, article, colors)
                 }
             }
         )

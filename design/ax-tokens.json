@@ -1,10 +1,10 @@
 {
-  "$description": "AX adaptation of Google's Material 3 Design Kit. Generated from Kotlin; see docs/DESIGN_SYSTEM.md for origin and Figma status.",
+  "$description": "AX editorial paper/ink design. Generated from Kotlin; see docs/DESIGN_SYSTEM.md for reference and licensing.",
   "color": {
     "light": {
       "primary": {
         "$type": "color",
-        "$value": "#315e50"
+        "$value": "#40563b"
       },
       "onPrimary": {
         "$type": "color",
@@ -12,15 +12,15 @@
       },
       "primaryContainer": {
         "$type": "color",
-        "$value": "#d5e9db"
+        "$value": "#e6ebda"
       },
       "onPrimaryContainer": {
         "$type": "color",
-        "$value": "#163c2e"
+        "$value": "#263824"
       },
       "inversePrimary": {
         "$type": "color",
-        "$value": "#b3d5c3"
+        "$value": "#d1dcb7"
       },
       "secondary": {
         "$type": "color",
@@ -32,11 +32,11 @@
       },
       "secondaryContainer": {
         "$type": "color",
-        "$value": "#dfe9df"
+        "$value": "#e9eddf"
       },
       "onSecondaryContainer": {
         "$type": "color",
-        "$value": "#243d30"
+        "$value": "#2e3b28"
       },
       "tertiary": {
         "$type": "color",
@@ -56,19 +56,19 @@
       },
       "background": {
         "$type": "color",
-        "$value": "#faf8f0"
+        "$value": "#f8f7f0"
       },
       "onBackground": {
         "$type": "color",
-        "$value": "#202820"
+        "$value": "#293026"
       },
       "surface": {
         "$type": "color",
-        "$value": "#faf8f0"
+        "$value": "#f8f7f0"
       },
       "onSurface": {
         "$type": "color",
-        "$value": "#202820"
+        "$value": "#293026"
       },
       "surfaceVariant": {
         "$type": "color",
@@ -80,7 +80,7 @@
       },
       "surfaceTint": {
         "$type": "color",
-        "$value": "#315e50"
+        "$value": "#40563b"
       },
       "inverseSurface": {
         "$type": "color",
@@ -146,23 +146,23 @@
     "dark": {
       "primary": {
         "$type": "color",
-        "$value": "#b3d5c3"
+        "$value": "#d1dcb7"
       },
       "onPrimary": {
         "$type": "color",
-        "$value": "#113829"
+        "$value": "#28321f"
       },
       "primaryContainer": {
         "$type": "color",
-        "$value": "#2d5141"
+        "$value": "#3d4a33"
       },
       "onPrimaryContainer": {
         "$type": "color",
-        "$value": "#d5e9db"
+        "$value": "#e6ebda"
       },
       "inversePrimary": {
         "$type": "color",
-        "$value": "#315e50"
+        "$value": "#40563b"
       },
       "secondary": {
         "$type": "color",
@@ -178,7 +178,7 @@
       },
       "onSecondaryContainer": {
         "$type": "color",
-        "$value": "#dfe9df"
+        "$value": "#e9eddf"
       },
       "tertiary": {
         "$type": "color",
@@ -198,19 +198,19 @@
       },
       "background": {
         "$type": "color",
-        "$value": "#151d19"
+        "$value": "#20271f"
       },
       "onBackground": {
         "$type": "color",
-        "$value": "#e3e8df"
+        "$value": "#e6e6d8"
       },
       "surface": {
         "$type": "color",
-        "$value": "#151d19"
+        "$value": "#20271f"
       },
       "onSurface": {
         "$type": "color",
-        "$value": "#e3e8df"
+        "$value": "#e6e6d8"
       },
       "surfaceVariant": {
         "$type": "color",
@@ -222,11 +222,11 @@
       },
       "surfaceTint": {
         "$type": "color",
-        "$value": "#b3d5c3"
+        "$value": "#d1dcb7"
       },
       "inverseSurface": {
         "$type": "color",
-        "$value": "#e3e8df"
+        "$value": "#e6e6d8"
       },
       "inverseOnSurface": {
         "$type": "color",
@@ -254,7 +254,7 @@
       },
       "surfaceContainerLow": {
         "$type": "color",
-        "$value": "#1a241d"
+        "$value": "#242c23"
       },
       "surfaceContainer": {
         "$type": "color",
@@ -377,35 +377,35 @@
       "cardRadius": {
         "$type": "dimension",
         "$value": {
-          "value": 16.0,
+          "value": 0.0,
           "unit": "dp"
         }
       },
       "dialogRadius": {
         "$type": "dimension",
         "$value": {
-          "value": 28.0,
+          "value": 8.0,
           "unit": "dp"
         }
       },
       "inputRadius": {
         "$type": "dimension",
         "$value": {
-          "value": 12.0,
+          "value": 4.0,
           "unit": "dp"
         }
       },
       "buttonRadius": {
         "$type": "dimension",
         "$value": {
-          "value": 12.0,
+          "value": 4.0,
           "unit": "dp"
         }
       },
       "filterRadius": {
         "$type": "dimension",
         "$value": {
-          "value": 8.0,
+          "value": 4.0,
           "unit": "dp"
         }
       },
@@ -440,21 +440,21 @@
       "railWidth": {
         "$type": "dimension",
         "$value": {
-          "value": 96.0,
+          "value": 72.0,
           "unit": "dp"
         }
       },
       "largeTextRailWidth": {
         "$type": "dimension",
         "$value": {
-          "value": 112.0,
+          "value": 88.0,
           "unit": "dp"
         }
       },
       "railItemMinHeight": {
         "$type": "dimension",
         "$value": {
-          "value": 72.0,
+          "value": 56.0,
           "unit": "dp"
         }
       },
@@ -477,14 +477,14 @@
       "cardGap": {
         "$type": "dimension",
         "$value": {
-          "value": 12.0,
+          "value": 0.0,
           "unit": "dp"
         }
       },
       "pageMargin": {
         "$type": "dimension",
         "$value": {
-          "value": 20.0,
+          "value": 24.0,
           "unit": "dp"
         }
       },
@@ -512,7 +512,7 @@
       "selectedOutlineWidth": {
         "$type": "dimension",
         "$value": {
-          "value": 2.0,
+          "value": 3.0,
           "unit": "dp"
         }
       },
@@ -536,8 +536,8 @@
     "displayLarge": {
       "$type": "typography",
       "$value": {
-        "fontFamily": "sans-serif",
-        "fontWeight": 700,
+        "fontFamily": "Nanum Myeongjo",
+        "fontWeight": 400,
         "fontSize": {
           "value": 40.0,
           "unit": "sp"
@@ -555,8 +555,8 @@
     "displayMedium": {
       "$type": "typography",
       "$value": {
-        "fontFamily": "sans-serif",
-        "fontWeight": 700,
+        "fontFamily": "Nanum Myeongjo",
+        "fontWeight": 400,
         "fontSize": {
           "value": 36.0,
           "unit": "sp"
@@ -574,8 +574,8 @@
     "displaySmall": {
       "$type": "typography",
       "$value": {
-        "fontFamily": "sans-serif",
-        "fontWeight": 700,
+        "fontFamily": "Nanum Myeongjo",
+        "fontWeight": 400,
         "fontSize": {
           "value": 32.0,
           "unit": "sp"
@@ -593,10 +593,48 @@
     "headlineLarge": {
       "$type": "typography",
       "$value": {
-        "fontFamily": "sans-serif",
-        "fontWeight": 700,
+        "fontFamily": "Nanum Myeongjo",
+        "fontWeight": 400,
         "fontSize": {
-          "value": 28.0,
+          "value": 32.0,
+          "unit": "sp"
+        },
+        "lineHeight": {
+          "value": 44.0,
+          "unit": "sp"
+        },
+        "letterSpacing": {
+          "value": 0.0,
+          "unit": "sp"
+        }
+      }
+    },
+    "headlineMedium": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "Nanum Myeongjo",
+        "fontWeight": 400,
+        "fontSize": {
+          "value": 30.0,
+          "unit": "sp"
+        },
+        "lineHeight": {
+          "value": 40.0,
+          "unit": "sp"
+        },
+        "letterSpacing": {
+          "value": 0.0,
+          "unit": "sp"
+        }
+      }
+    },
+    "headlineSmall": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "Nanum Myeongjo",
+        "fontWeight": 400,
+        "fontSize": {
+          "value": 26.0,
           "unit": "sp"
         },
         "lineHeight": {
@@ -609,55 +647,17 @@
         }
       }
     },
-    "headlineMedium": {
+    "titleLarge": {
       "$type": "typography",
       "$value": {
-        "fontFamily": "sans-serif",
-        "fontWeight": 700,
+        "fontFamily": "Nanum Myeongjo",
+        "fontWeight": 400,
         "fontSize": {
           "value": 24.0,
           "unit": "sp"
         },
         "lineHeight": {
-          "value": 32.0,
-          "unit": "sp"
-        },
-        "letterSpacing": {
-          "value": 0.0,
-          "unit": "sp"
-        }
-      }
-    },
-    "headlineSmall": {
-      "$type": "typography",
-      "$value": {
-        "fontFamily": "sans-serif",
-        "fontWeight": 600,
-        "fontSize": {
-          "value": 22.0,
-          "unit": "sp"
-        },
-        "lineHeight": {
-          "value": 30.0,
-          "unit": "sp"
-        },
-        "letterSpacing": {
-          "value": 0.0,
-          "unit": "sp"
-        }
-      }
-    },
-    "titleLarge": {
-      "$type": "typography",
-      "$value": {
-        "fontFamily": "sans-serif",
-        "fontWeight": 600,
-        "fontSize": {
-          "value": 22.0,
-          "unit": "sp"
-        },
-        "lineHeight": {
-          "value": 28.0,
+          "value": 34.0,
           "unit": "sp"
         },
         "letterSpacing": {
@@ -670,7 +670,7 @@
       "$type": "typography",
       "$value": {
         "fontFamily": "sans-serif",
-        "fontWeight": 500,
+        "fontWeight": 600,
         "fontSize": {
           "value": 16.0,
           "unit": "sp"
@@ -830,11 +830,19 @@
     },
     "titleFontSize": {
       "$type": "number",
-      "$value": 28
+      "$value": 32
     },
     "titleLineHeight": {
       "$type": "number",
-      "$value": 36
+      "$value": 44
+    },
+    "headingFontSize": {
+      "$type": "number",
+      "$value": 24
+    },
+    "headingLineHeight": {
+      "$type": "number",
+      "$value": 34
     },
     "subheadingFontSize": {
       "$type": "number",
@@ -842,7 +850,15 @@
     },
     "subheadingLineHeight": {
       "$type": "number",
-      "$value": 28
+      "$value": 32
+    },
+    "quoteFontSize": {
+      "$type": "number",
+      "$value": 22
+    },
+    "quoteLineHeight": {
+      "$type": "number",
+      "$value": 34
     },
     "codeFontSize": {
       "$type": "number",
@@ -898,11 +914,11 @@
     },
     "sectionSpacing": {
       "$type": "number",
-      "$value": 32
+      "$value": 40
     },
     "codeCornerRadius": {
       "$type": "number",
-      "$value": 8
+      "$value": 4
     },
     "$description": "Font sizes/line heights: CSS px or native sp. Layout: CSS px or native dp. horizontalPaddingViewportPercent is a percentage. See AxReaderStyle.kt."
   },
@@ -938,7 +954,7 @@
       },
       "card": {
         "$type": "color",
-        "$value": "{color.light.surfaceContainerLow}"
+        "$value": "{color.light.surface}"
       },
       "selected": {
         "$type": "color",
@@ -992,7 +1008,7 @@
       },
       "card": {
         "$type": "color",
-        "$value": "{color.dark.surfaceContainerLow}"
+        "$value": "{color.dark.surface}"
       },
       "selected": {
         "$type": "color",

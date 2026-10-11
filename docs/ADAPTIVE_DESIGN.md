@@ -9,7 +9,7 @@ The available Compose window bounds determine the layout, not the device model o
 - Below 600dp: single pane, existing Notes/Library bottom navigation and Search/Settings app-bar actions.
 - From 600dp: persistent, scrollable side navigation for Notes, Library, Search and Settings. One content pane remains below the two-pane threshold.
 - From 840dp, with at least 480dp window height: list and detail side by side. Notes, Library and Search keep their source list visible while opening an article or editing a linked memo. Settings remains a centered single page.
-- At 150% or larger text: two panes start at 1000dp. The rail is 112dp instead of 96dp, and the list gets 380dp. At normal text the list grows from 320dp to a maximum of 400dp.
+- At 150% or larger text: two panes start at 1000dp. The editorial icon rail is 88dp instead of 72dp, and the list gets 380dp. At normal text the list grows from 320dp to a maximum of 400dp.
 - Very short landscape windows keep a single pane even if they are wide. The navigation rail scrolls rather than clipping destinations.
 - No article is auto-selected. The initial detail pane explains how to begin; Back from a selected article returns to that state while preserving the list position.
 

@@ -17,7 +17,7 @@ OUT = ROOT / "design/ax-tokens.json"
 def export():
     source = (UI / "AxDesignSystem.kt").read_text()
     tokens = {
-        "$description": "AX adaptation of Google's Material 3 Design Kit. Generated from Kotlin; see docs/DESIGN_SYSTEM.md for origin and Figma status.",
+        "$description": "AX editorial paper/ink design. Generated from Kotlin; see docs/DESIGN_SYSTEM.md for reference and licensing.",
         "color": {}, "dimension": {}, "typography": {}, "reader": {}, "semantic": {},
     }
     for mode, name in (("light", "AxLightColors"), ("dark", "AxDarkColors")):
@@ -79,14 +79,20 @@ def export():
 
         families = {"SansSerif": "sans-serif", "Serif": "serif", "Monospace": "monospace", "Cursive": "cursive", "Default": "system-ui"}
         family_match = re.fullmatch(r"FontFamily\.(\w+)", attributes.get("fontFamily", ""))
-        if not family_match or family_match[1] not in families:
+        if attributes.get("fontFamily") == "AxEditorialFont":
+            if "internal val AxEditorialFont = FontFamily(Font(R.font.nanum_myeongjo_regular, FontWeight.Normal))" not in source:
+                raise ValueError("Unsupported editorial font family resource")
+            family = "Nanum Myeongjo"
+        elif family_match and family_match[1] in families:
+            family = families[family_match[1]]
+        else:
             raise ValueError(f"Unsupported font family in {role}")
         weights = {"Normal": 400, "Medium": 500, "SemiBold": 600, "Bold": 700}
         weight_match = re.fullmatch(r"FontWeight\.(\w+)", attributes.get("fontWeight", "FontWeight.Normal"))
         if not weight_match or weight_match[1] not in weights:
             raise ValueError(f"Unsupported font weight in {role}")
         tokens["typography"][role] = {"$type": "typography", "$value": {
-            "fontFamily": families[family_match[1]], "fontWeight": weights[weight_match[1]],
+            "fontFamily": family, "fontWeight": weights[weight_match[1]],
             "fontSize": {"value": sp_value("fontSize"), "unit": "sp"},
             "lineHeight": {"value": sp_value("lineHeight"), "unit": "sp"},
             "letterSpacing": {"value": sp_value("letterSpacing"), "unit": "sp"},
@@ -105,7 +111,7 @@ def export():
     tokens["reader"]["$description"] = "Font sizes/line heights: CSS px or native sp. Layout: CSS px or native dp. horizontalPaddingViewportPercent is a percentage. See AxReaderStyle.kt."
     role_map = {"canvas": "background", "text": "onSurface", "supportingText": "onSurfaceVariant",
                 "action": "primary", "onAction": "onPrimary", "actionContainer": "primaryContainer",
-                "onActionContainer": "onPrimaryContainer", "card": "surfaceContainerLow",
+                "onActionContainer": "onPrimaryContainer", "card": "surface",
                 "selected": "secondaryContainer", "onSelected": "onSecondaryContainer",
                 "border": "outlineVariant", "error": "error", "onError": "onError"}
     for mode in ("light", "dark"):

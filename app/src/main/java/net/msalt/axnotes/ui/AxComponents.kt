@@ -1,7 +1,8 @@
 package net.msalt.axnotes.ui
 
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
@@ -11,6 +12,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.selected
@@ -25,38 +31,43 @@ internal fun AxCard(
     selected: Boolean = false,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    Card(
-        onClick = onClick, modifier = modifier.fillMaxWidth().semantics { this.selected = selected },
-        shape = MaterialTheme.shapes.large, colors = axCardColors(selected),
-        border = axCardBorder(selected), content = content
-    )
+    AxCardFrame(modifier.clickable(onClick = onClick), selected, content)
 }
 
-/** Non-clickable container for cards with separate body and secondary actions. */
+/** Non-clickable ruled row with separate body and secondary actions. */
 @Composable
 internal fun AxCardFrame(
     modifier: Modifier = Modifier,
     selected: Boolean = false,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    Card(
-        modifier = modifier.fillMaxWidth().semantics { this.selected = selected },
-        shape = MaterialTheme.shapes.large, colors = axCardColors(selected),
-        border = axCardBorder(selected), content = content
-    )
+    val colors = MaterialTheme.colorScheme
+    Surface(
+        modifier = modifier.fillMaxWidth().heightIn(min = AxSize.minTouch)
+            .semantics { this.selected = selected },
+        color = if (selected) colors.secondaryContainer else colors.surface,
+        contentColor = if (selected) colors.onSecondaryContainer else colors.onSurface
+    ) {
+        Column(Modifier.drawBehind {
+            drawLine(colors.outlineVariant, Offset(0f, size.height), Offset(size.width, size.height), AxComponentTokens.outlineWidth.toPx())
+            if (selected) drawRect(colors.primary, size = Size(AxComponentTokens.selectedOutlineWidth.toPx(), size.height))
+        }, content = content)
+    }
 }
 
+/** A quiet, underlined section selector with a full 48dp touch target. */
 @Composable
-private fun axCardColors(selected: Boolean) = CardDefaults.cardColors(
-    containerColor = if (selected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
-    contentColor = if (selected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurface
-)
-
-@Composable
-private fun axCardBorder(selected: Boolean) = BorderStroke(
-    if (selected) AxComponentTokens.selectedOutlineWidth else AxComponentTokens.outlineWidth,
-    if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
-)
+internal fun AxSectionTab(selected: Boolean, onClick: () -> Unit, label: String, modifier: Modifier = Modifier) {
+    val colors = MaterialTheme.colorScheme
+    Box(modifier.heightIn(min = AxSize.minTouch).widthIn(min = AxSize.minTouch)
+        .selectable(selected, role = Role.Tab, onClick = onClick)
+        .drawBehind {
+            if (selected) drawLine(colors.primary, Offset(0f, size.height), Offset(size.width, size.height), 2.dp.toPx())
+        }.padding(horizontal = AxSpacing.md, vertical = AxSpacing.md), contentAlignment = Alignment.Center) {
+        Text(label, style = MaterialTheme.typography.labelLarge,
+            color = if (selected) colors.primary else colors.onSurfaceVariant)
+    }
+}
 
 @Composable
 internal fun AxButton(

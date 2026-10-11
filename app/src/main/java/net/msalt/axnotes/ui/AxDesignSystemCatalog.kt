@@ -23,7 +23,7 @@ internal fun AxDesignSystemCatalog(darkTheme: Boolean = false) {
                 ) {
                     item {
                         Text("AX 디자인 시스템", style = MaterialTheme.typography.headlineMedium)
-                        Text("차분하게 읽고, 생각을 남기는 숲색과 종이색", style = MaterialTheme.typography.bodyLarge)
+                        Text("명조 제목, 종이와 잉크, 생각을 남기는 여백", style = MaterialTheme.typography.bodyLarge)
                     }
                     item {
                         CatalogSection("행동 · 기본 / 비활성 / 처리 중") {
@@ -36,18 +36,19 @@ internal fun AxDesignSystemCatalog(darkTheme: Boolean = false) {
                         }
                     }
                     item {
-                        CatalogSection("카드 · 기본 / 선택") {
+                        CatalogSection("글 목록 · 기본 / 선택") {
                             AxCard({}, Modifier.testTag("catalog_card_default")) {
                                 CatalogCardContent("AI와 함께 일하며 배운 것들", "2026.10.10 · 프로젝트")
                             }
                             AxCard({}, Modifier.testTag("catalog_card_selected"), selected = true) {
-                                CatalogCardContent("선택한 글은 색과 테두리로 함께 구분합니다", "글을 선택해도 목록과 읽던 위치를 유지합니다")
+                                CatalogCardContent("선택한 글은 잉크색 여백선으로 구분합니다", "글을 선택해도 목록과 읽던 위치를 유지합니다")
                             }
                         }
                     }
                     item {
                         CatalogSection("분류 · 선택 / 선택 안 됨 / 비활성") {
                             var selected by remember { mutableStateOf(true) }
+                            AxSectionTab(selected, { selected = !selected }, "시리즈", Modifier.testTag("catalog_section_tab"))
                             AxFilterChip(selected, { selected = !selected }, { Text("시리즈") })
                             AxFilterChip(false, {}, { Text("프로젝트의 긴 이름도 알아볼 수 있게") })
                             AxFilterChip(false, {}, { Text("사용할 수 없음") }, enabled = false)
