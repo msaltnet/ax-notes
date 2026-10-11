@@ -34,12 +34,18 @@ import org.robolectric.annotation.LooperMode
 class AdaptiveUiFlowTest {
     @get:Rule(order = 0) val work = object : ExternalResource() {
         override fun before() {
+            resetViewModelFactoryApplication()
             val context = ApplicationProvider.getApplicationContext<Context>()
             context.getSharedPreferences("settings", Context.MODE_PRIVATE).edit()
                 .putBoolean("sample", true).putBoolean("liveFeedDefaultV3", true).commit()
             WorkManagerTestInitHelper.initializeTestWorkManager(context, Configuration.Builder().setExecutor(SynchronousExecutor()).build())
         }
-        override fun after() { WorkManagerTestInitHelper.closeWorkDatabase() }
+        override fun after() { WorkManagerTestInitHelper.closeWorkDatabase(); resetViewModelFactoryApplication() }
+    }
+    private fun resetViewModelFactoryApplication() {
+        // Lifecycle caches an Application, but each Robolectric test owns a new one.
+        androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory::class.java.getDeclaredField("_instance")
+            .apply { isAccessible = true }.set(null, null)
     }
     @get:Rule(order = 1) val compose = createAndroidComposeRule<MainActivity>()
     private val articleTitle = "AX Notes 앱도 만들어볼까?"
