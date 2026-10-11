@@ -6,3 +6,7 @@ local.properties
 *.keystore
 .idea/
 *.iml
+
+# Local design-token exporter checks
+__pycache__/
+*.pyc

@@ -36,7 +36,7 @@ class AdaptiveUiFlowTest {
         override fun before() {
             val context = ApplicationProvider.getApplicationContext<Context>()
             context.getSharedPreferences("settings", Context.MODE_PRIVATE).edit()
-                .putBoolean("sample", true).putBoolean("liveFeedDefaultV2", true).commit()
+                .putBoolean("sample", true).putBoolean("liveFeedDefaultV3", true).commit()
             WorkManagerTestInitHelper.initializeTestWorkManager(context, Configuration.Builder().setExecutor(SynchronousExecutor()).build())
         }
         override fun after() { WorkManagerTestInitHelper.closeWorkDatabase() }
@@ -164,8 +164,8 @@ class AdaptiveUiFlowTest {
     @Test fun expandedWorkspacePreservesBookmarkMemoSearchAndReminderCancel() {
         waitForNotes()
         compose.onNodeWithText(articleTitle).performClick()
-        compose.onNodeWithText("저장").performClick()
-        compose.waitUntil(10000) { compose.onAllNodesWithText("저장됨").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("북마크").performClick()
+        compose.waitUntil(10000) { compose.onAllNodesWithText("북마크됨").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("읽기 알림").performClick()
         compose.onNodeWithText("나중에 읽기").assertExists()
         compose.onNodeWithText("취소").performClick()
@@ -202,8 +202,7 @@ class AdaptiveUiFlowTest {
             androidx.lifecycle.ViewModelProvider(compose.activity)[net.msalt.axnotes.ui.AxViewModel::class.java]
                 .sampleMode.value = false
         }
-        compose.onNodeWithText("내부 테스트용 콘텐츠 스냅샷").assertExists()
-        compose.onNodeWithText("연결 변경 대기", substring = true).assertExists()
+        compose.onNodeWithText("이전에 저장한 글을 표시하고 있어요.", substring = true).assertExists()
         compose.onNodeWithText("AX Notes 웹 콘텐츠").assertDoesNotExist()
     }
 

@@ -53,11 +53,22 @@ object FeedContract {
             require(URI(detail).path.endsWith("/$id/$revision.json"))
             val canonical = n.getString("canonicalUrl"); require(SafeUrl.https(canonical))
             val project = n.optionalString("projectUrl"); require(project == null || SafeUrl.https(project))
+            val projectId = n.taxonomyId("projectId")
+            val projectTitle = n.taxonomyTitle("projectTitle")
+            val projectOrder = n.taxonomyOrder("projectOrder")
+            val seriesId = n.taxonomyId("seriesId")
+            val seriesTitle = n.taxonomyTitle("seriesTitle")
+            val seriesOrder = n.taxonomyOrder("seriesOrder")
+            requireTaxonomy(projectId, projectTitle, projectOrder)
+            requireTaxonomy(seriesId, seriesTitle, seriesOrder)
+            require(projectId == null || seriesId == null) { "글은 하나의 모음에만 연결할 수 있습니다" }
             val date = n.getString("publishedAt"); validDate(date)
             val updated = n.optionalString("updatedAt"); if (updated != null) validDate(updated)
             val title = n.getString("title"); val description = n.getString("description")
             require(title.isNotBlank() && title.length <= 500 && description.length <= 5000)
-            Article(id, normalize(title), normalize(description), date, updated, canonical, detail, revision, project)
+            Article(id, normalize(title), normalize(description), date, updated, canonical, detail, revision, project,
+                projectId = projectId, projectTitle = projectTitle, projectOrder = projectOrder,
+                seriesId = seriesId, seriesTitle = seriesTitle, seriesOrder = seriesOrder)
         }
         require(result.map { it.id }.distinct().size == result.size) { "중복 글 ID" }
         return Manifest(result, name, about, channels.toString())
@@ -76,6 +87,25 @@ object FeedContract {
     }
     private fun validDate(value: String) { if (value.length == 10) LocalDate.parse(value) else Instant.parse(value) }
     private fun JSONObject.optionalString(key: String): String? = if (isNull(key) || !has(key)) null else getString(key)
+    private fun JSONObject.taxonomyId(key: String): String? = taxonomyString(key)?.also { require(idPattern.matches(it)) }
+    private fun JSONObject.taxonomyTitle(key: String): String? = taxonomyString(key)?.also {
+        require(it.isNotBlank() && it.length <= 500)
+    }?.let(::normalize)
+    private fun JSONObject.taxonomyString(key: String): String? {
+        if (!has(key) || isNull(key)) return null
+        return (get(key) as? String) ?: error("모음 문자열 형식이 올바르지 않습니다")
+    }
+    private fun JSONObject.taxonomyOrder(key: String): Int? {
+        if (!has(key) || isNull(key)) return null
+        val value = (get(key) as? Number)?.toDouble() ?: error("모음 순서 형식이 올바르지 않습니다")
+        require(value.isFinite() && value >= 1 && value <= Int.MAX_VALUE && value % 1.0 == 0.0)
+        return value.toInt()
+    }
+    private fun requireTaxonomy(id: String?, title: String?, order: Int?) {
+        require((id == null && title == null && order == null) || (id != null && title != null && order != null)) {
+            "모음 ID, 제목, 순서가 함께 필요합니다"
+        }
+    }
     fun normalize(value: String) = Normalizer.normalize(value, Normalizer.Form.NFC)
     fun searchPattern(query: String): String = "%" + normalize(query.trim().take(200)).replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%"
 }

@@ -20,21 +20,37 @@ import org.robolectric.annotation.LooperMode
 class UiFlowTest {
     @get:Rule(order = 0) val work = object : ExternalResource() {
         override fun before() {
+            resetViewModelFactoryApplication()
             ApplicationProvider.getApplicationContext<android.content.Context>()
                 .getSharedPreferences("settings", android.content.Context.MODE_PRIVATE).edit()
-                .putBoolean("sample", true).putBoolean("liveFeedDefaultV2", true).commit()
+                .putBoolean("sample", true).putBoolean("liveFeedDefaultV3", true).commit()
             WorkManagerTestInitHelper.initializeTestWorkManager(ApplicationProvider.getApplicationContext(), Configuration.Builder().setExecutor(SynchronousExecutor()).build())
         }
-        override fun after() { WorkManagerTestInitHelper.closeWorkDatabase() }
+        override fun after() { WorkManagerTestInitHelper.closeWorkDatabase(); resetViewModelFactoryApplication() }
+    }
+    private fun resetViewModelFactoryApplication() {
+        // Lifecycle caches an Application, but each Robolectric test owns a new one.
+        androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory::class.java.getDeclaredField("_instance")
+            .apply { isAccessible = true }.set(null, null)
     }
     @get:Rule(order = 1) val compose = createAndroidComposeRule<MainActivity>()
-    private fun waitForNotes() { compose.waitUntil(15000) { compose.onAllNodesWithText("AX Notes 앱도 만들어볼까?").fetchSemanticsNodes().isNotEmpty() } }
+    private fun waitForNotes() {
+        val vm = compose.runOnIdle { androidx.lifecycle.ViewModelProvider(compose.activity)[net.msalt.axnotes.ui.AxViewModel::class.java] }
+        compose.waitUntil(15000) {
+            // A semantics read drains the PAUSED Robolectric main looper.
+            compose.onNodeWithTag("notes_list").fetchSemanticsNode()
+            vm.articles.value.any { it.title == "AX Notes 앱도 만들어볼까?" }
+        }
+        // The journal heading can fill the small default test window; wait for data,
+        // then exercise the real scroll path instead of requiring the row above the fold.
+        compose.onNodeWithTag("notes_list").performScrollToNode(hasText("AX Notes 앱도 만들어볼까?"))
+    }
     @Test fun repeatedNavigationReturnsToStableNotesAndLibrary() {
         waitForNotes()
         repeat(3) {
-            compose.onNodeWithText("내 보관함").performClick()
+            compose.onNodeWithContentDescription("내 보관함").performClick()
             compose.onNodeWithText("나만의 읽기 공간").assertExists()
-            compose.onNodeWithText("Notes").performClick()
+            compose.onNodeWithContentDescription("Notes").performClick()
             compose.onNodeWithText("AX Notes 앱도 만들어볼까?").assertExists()
         }
     }

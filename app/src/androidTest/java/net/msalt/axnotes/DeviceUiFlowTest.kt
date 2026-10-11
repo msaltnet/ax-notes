@@ -14,9 +14,9 @@ class DeviceUiFlowTest {
     @Test fun repeatedNavigationReturnsToStableNotesAndLibrary() {
         waitForNotes()
         repeat(3) {
-            compose.onNodeWithText("내 보관함").performClick()
+            compose.onNodeWithContentDescription("내 보관함").performClick()
             compose.onNodeWithText("나만의 읽기 공간").assertExists()
-            compose.onNodeWithText("Notes").performClick()
+            compose.onNodeWithContentDescription("Notes").performClick()
             compose.onNodeWithText("AX Notes 앱도 만들어볼까?").assertExists()
         }
     }
