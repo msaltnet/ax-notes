@@ -1,11 +1,11 @@
 package net.msalt.axnotes.ui
 
 import android.app.Application
-import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.material3.Text
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -34,7 +34,6 @@ import org.robolectric.android.controller.ActivityController
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import org.robolectric.annotation.LooperMode
-import org.robolectric.shadows.ShadowDialog
 
 /** Exercises the real date/time dialogs without repository or notification side effects. */
 @RunWith(RobolectricTestRunner::class)
@@ -74,15 +73,15 @@ class AxReminderDialogTest {
         showDialog(fontScale = 2f)
         assertCurrentValues()
         compose.onNodeWithTag("reminder_date").performScrollTo().performClick()
-        // Large-text mode exposes the actual Material date input rather than a cramped grid.
-        compose.onNode(hasSetTextAction()).performScrollTo().performTextReplacement("01052099")
+        assertCalendarOnly()
+        selectDay("5")
         compose.onNodeWithText("날짜 적용").assertIsEnabled().performClick()
         compose.runOnIdle { assertEquals(localMillis(2099, 1, 5, 10, 15), dueAt.value) }
         assertCurrentValues()
 
         openTime()
-        compose.onNodeWithTag("reminder_hour").performTextReplacement("21")
-        compose.onNodeWithTag("reminder_minute").performTextReplacement("45")
+        selectWheel("reminder_hour", 21)
+        selectWheel("reminder_minute", 45)
         compose.onNodeWithText("시각 적용").assertIsEnabled().performClick()
         compose.runOnIdle {
             assertEquals(localMillis(2099, 1, 5, 21, 45), dueAt.value)
@@ -99,7 +98,8 @@ class AxReminderDialogTest {
     fun canceledDateEditsDoNotLeakIntoAReopenedPicker() {
         showDialog(fontScale = 2f)
         compose.onNodeWithTag("reminder_date").performScrollTo().performClick()
-        compose.onNode(hasSetTextAction()).performScrollTo().performTextReplacement("01072099")
+        assertCalendarOnly()
+        selectDay("7")
         cancelPicker("날짜 선택")
         compose.runOnIdle {
             assertEquals(localMillis(2099, 1, 2, 10, 15), dueAt.value)
@@ -107,8 +107,7 @@ class AxReminderDialogTest {
         }
         assertCurrentValues()
         compose.onNodeWithTag("reminder_date").performScrollTo().performClick()
-        val input = compose.onNode(hasSetTextAction()).fetchSemanticsNode().config[SemanticsProperties.EditableText].text
-        assertEquals("A canceled date must not survive reopening", "01022099", input.filter(Char::isDigit))
+        calendarDay("2").assertIsSelected()
         compose.onNodeWithText("날짜 적용").performClick()
         compose.runOnIdle { assertEquals(localMillis(2099, 1, 2, 10, 15), dueAt.value) }
     }
@@ -117,20 +116,20 @@ class AxReminderDialogTest {
     fun canceledTimeEditsAreDiscardedAndReopeningUsesTheLastAppliedTime() {
         showDialog()
         openTime()
-        compose.onNodeWithTag("reminder_hour").performTextReplacement("23")
-        compose.onNodeWithTag("reminder_minute").performTextReplacement("09")
+        selectWheel("reminder_hour", 23)
+        selectWheel("reminder_minute", 9)
         cancelPicker("시각 선택")
         compose.runOnIdle { assertTrue(changes.isEmpty()) }
         assertCurrentValues()
         openTime()
-        assertEditableValue("reminder_hour", "10")
-        assertEditableValue("reminder_minute", "15")
-        compose.onNodeWithTag("reminder_hour").performTextReplacement("12")
-        compose.onNodeWithTag("reminder_minute").performTextReplacement("34")
+        assertWheelValue("reminder_hour", "10")
+        assertWheelValue("reminder_minute", "15")
+        selectWheel("reminder_hour", 12)
+        selectWheel("reminder_minute", 34)
         compose.onNodeWithText("시각 적용").performClick()
         openTime()
-        assertEditableValue("reminder_hour", "12")
-        assertEditableValue("reminder_minute", "34")
+        assertWheelValue("reminder_hour", "12")
+        assertWheelValue("reminder_minute", "34")
         cancelPicker("시각 선택")
 
         compose.onNodeWithText("취소").performClick()
@@ -138,8 +137,8 @@ class AxReminderDialogTest {
         compose.onNodeWithText("알림 다시 열기").performClick()
         assertCurrentValues()
         openTime()
-        assertEditableValue("reminder_hour", "12")
-        assertEditableValue("reminder_minute", "34")
+        assertWheelValue("reminder_hour", "12")
+        assertWheelValue("reminder_minute", "34")
         compose.runOnIdle {
             assertEquals(listOf(localMillis(2099, 1, 2, 12, 34)), changes)
             assertEquals(1, dismissals)
@@ -148,25 +147,51 @@ class AxReminderDialogTest {
     }
 
     @Test
-    fun invalidHoursMinutesAndEmptyValuesDisableApplyWithoutChangingDueAt() {
+    fun scrollWheelsExposeOnlyValidEndpointsAndAccessibleAdjustments() {
         showDialog()
         openTime()
-        listOf("24" to "15", "10" to "60", "" to "15", "10" to "").forEach { (hour, minute) ->
-            compose.onNodeWithTag("reminder_hour").performTextReplacement(hour)
-            compose.onNodeWithTag("reminder_minute").performTextReplacement(minute)
-            compose.onNodeWithText("시각 적용").assertIsNotEnabled().performTouchInput { click() }
-            compose.onNodeWithTag(if (hour.isEmpty() || hour == "24") "reminder_hour" else "reminder_minute")
-                .assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.Error))
-            compose.runOnIdle {
-                assertTrue(changes.isEmpty())
-                assertEquals(localMillis(2099, 1, 2, 10, 15), dueAt.value)
-            }
-        }
-        compose.onNodeWithTag("reminder_hour").performTextReplacement("00")
-        compose.onNodeWithTag("reminder_minute").performTextReplacement("00")
+        compose.onAllNodes(hasSetTextAction()).assertCountEquals(0)
+        selectWheel("reminder_hour", 23)
+        selectWheel("reminder_minute", 59)
+        assertWheelValue("reminder_hour", "23")
+        assertWheelValue("reminder_minute", "59")
+        compose.onNodeWithText("시각 적용").performClick()
+        compose.runOnIdle { assertEquals(localMillis(2099, 1, 2, 23, 59), dueAt.value) }
+        openTime()
+        compose.onNodeWithTag("reminder_hour").performSemanticsAction(SemanticsActions.SetProgress) { it(-1f) }
+        compose.onNodeWithTag("reminder_minute").performSemanticsAction(SemanticsActions.SetProgress) { it(0f) }
+        assertWheelValue("reminder_hour", "00")
+        assertWheelValue("reminder_minute", "00")
         compose.onNodeWithText("시각 적용").assertIsEnabled().performClick()
         compose.runOnIdle { assertEquals(localMillis(2099, 1, 2, 0, 0), dueAt.value) }
         assertCurrentValues()
+    }
+
+    @Test
+    fun bothWheelsRespondToRealSwipesAndStageTheirCenteredValuesUntilApply() {
+        showDialog()
+        openTime()
+        listOf("reminder_hour", "reminder_minute").forEach { tag ->
+            compose.onNodeWithTag(tag).assertIsDisplayed().performTouchInput {
+                swipe(start = Offset(center.x, center.y + height / 4),
+                    end = Offset(center.x, center.y - height / 4), durationMillis = 600)
+            }
+        }
+        val hour = wheelValue("reminder_hour")
+        val minute = wheelValue("reminder_minute")
+        assertTrue("The hour wheel must move with a real swipe", hour > 10)
+        assertTrue("The minute wheel must move independently", minute > 15)
+        listOf("reminder_hour" to hour, "reminder_minute" to minute).forEach { (tag, value) ->
+            val wheel = compose.onNodeWithTag(tag).fetchSemanticsNode().boundsInRoot
+            val selected = compose.onNodeWithTag("${tag}_$value").assertIsSelected().fetchSemanticsNode().boundsInRoot
+            assertEquals("A swiped wheel must snap to the selected center row", wheel.center.y, selected.center.y, 1f)
+        }
+        compose.runOnIdle {
+            assertTrue(changes.isEmpty())
+            assertEquals(localMillis(2099, 1, 2, 10, 15), dueAt.value)
+        }
+        compose.onNodeWithText("시각 적용").assertIsEnabled().performClick()
+        compose.runOnIdle { assertEquals(localMillis(2099, 1, 2, hour, minute), dueAt.value) }
     }
 
     @Test
@@ -185,34 +210,51 @@ class AxReminderDialogTest {
 
     @Test
     @Config(sdk = [26])
-    fun pickerWindowsRequestImeResizeOnAndroidOreo() {
+    fun androidOreoKeepsCalendarAndBothWheelsUsableWithoutKeyboardEntry() {
         showDialog(fontScale = 2f)
         openTime()
-        assertImeResizeRequested()
-        compose.onNodeWithTag("reminder_minute").performScrollTo().performClick()
+        compose.onAllNodes(hasSetTextAction()).assertCountEquals(0)
+        compose.onNodeWithTag("reminder_hour").assertIsDisplayed()
+        compose.onNodeWithTag("reminder_minute").assertIsDisplayed()
         compose.onNodeWithText("시각 적용").assertIsDisplayed().assertIsEnabled()
         cancelPicker("시각 선택")
         compose.onNodeWithTag("reminder_date").performScrollTo().performClick()
-        assertImeResizeRequested()
-        val dateWindow = checkNotNull(ShadowDialog.getLatestDialog().window)
-        assertEquals("Date host must fill the window so real IME insets can constrain its content",
-            WindowManager.LayoutParams.MATCH_PARENT, dateWindow.attributes.height)
-        compose.onNode(hasSetTextAction()).performScrollTo().performClick()
+        assertCalendarOnly()
+        selectDay("5")
         compose.onNodeWithText("날짜 적용").assertIsDisplayed().assertIsEnabled()
         cancelPicker("날짜 선택")
     }
 
-    private fun assertImeResizeRequested() {
-        // Robolectric does not render a real keyboard. Verify the actual window
-        // policy here; emulator coverage separately checks visible IME insets.
-        // performClick dispatches the callback; await the resulting dialog
-        // composition before asking Robolectric for the latest shown window.
-        compose.waitForIdle()
-        val dialog = checkNotNull(ShadowDialog.getLatestDialog())
-        assertTrue("Inspect the active picker, not the dismissed summary window", dialog.isShowing)
-        val window = checkNotNull(dialog.window)
-        assertEquals(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE,
-            window.attributes.softInputMode and WindowManager.LayoutParams.SOFT_INPUT_MASK_ADJUST)
+    @Test
+    @Config(qualifiers = "en-rUS-w360dp-h640dp-port-mdpi")
+    fun sixWeekCalendarScrollsToLastDayAtTwoHundredPercentAndAppliesOnlyThatSelection() {
+        val original = localMillis(2099, 5, 13, 10, 15)
+        showDialog(fontScale = 2f, initialDueAt = original, darkTheme = true)
+        compose.onNodeWithTag("reminder_date").performScrollTo().performClick()
+        assertCalendarOnly()
+        // May 2099 has six Sunday-first rows. Swipe the actual outer calendar;
+        // a semantic click alone can select a day still clipped under the footer.
+        compose.onNodeWithTag("reminder_calendar").performTouchInput { swipeUp(durationMillis = 500) }
+        val lastDay = compose.onNode(hasText("May 31, 2099", substring = true) and hasClickAction())
+        val calendar = compose.onNodeWithTag("reminder_calendar").fetchSemanticsNode().boundsInRoot
+        val dayBounds = lastDay.assertIsDisplayed().fetchSemanticsNode().boundsInRoot
+        assertTrue("The last row must be fully inside the scrolled viewport",
+            dayBounds.top >= calendar.top && dayBounds.bottom <= calendar.bottom)
+        lastDay.performTouchInput { click() }.assertIsSelected()
+        compose.runOnIdle {
+            assertEquals(original, dueAt.value)
+            assertTrue(changes.isEmpty())
+        }
+        val apply = compose.onNodeWithTag("reminder_date_apply").assertIsDisplayed().assertIsEnabled()
+        compose.onNodeWithTag("reminder_date_cancel").assertIsDisplayed().assertIsEnabled()
+        assertTrue("The selected last row must not overlap the fixed actions",
+            dayBounds.bottom <= apply.fetchSemanticsNode().boundsInRoot.top)
+        apply.performTouchInput { click() }
+        compose.runOnIdle {
+            assertEquals(localMillis(2099, 5, 31, 10, 15), dueAt.value)
+            assertEquals(listOf(dueAt.value), changes)
+        }
+        assertCurrentValues()
     }
 
     @Test
@@ -222,8 +264,12 @@ class AxReminderDialogTest {
     @Config(qualifiers = "en-rUS-w360dp-h800dp-port-mdpi")
     fun narrowPhoneKeepsRealTwoHundredPercentReminderValuesAndControlsReadable() = assertLargeTextDialog()
 
-    private fun assertLargeTextDialog() {
-        showDialog(fontScale = 2f)
+    @Test
+    @Config(qualifiers = "en-rUS-w360dp-h640dp-port-mdpi")
+    fun smallDarkPhoneKeepsTwoHundredPercentWheelsAndCalendarUsable() = assertLargeTextDialog(darkTheme = true)
+
+    private fun assertLargeTextDialog(darkTheme: Boolean = false) {
+        showDialog(fontScale = 2f, darkTheme = darkTheme)
         val date = DateFormat.getDateInstance(DateFormat.FULL).format(Date(dueAt.value))
         val time = DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(dueAt.value))
         listOf(date to AxTypography.titleMedium.fontSize, time to AxTypography.titleMedium.fontSize,
@@ -235,31 +281,51 @@ class AxReminderDialogTest {
         compose.onNodeWithTag("reminder_confirm").assertIsDisplayed().assertHasClickAction()
         val timeTop = compose.onNodeWithTag("reminder_time").performScrollTo().fetchSemanticsNode().boundsInRoot.top
         openTime()
-        listOf("reminder_hour", "reminder_minute").forEach { tag ->
+        listOf("reminder_hour" to "10", "reminder_minute" to "15").forEach { (tag, value) ->
+            compose.onNodeWithTag(tag).assertIsDisplayed()
+            assertWheelValue(tag, value)
             val layouts = mutableListOf<TextLayoutResult>()
-            compose.onNodeWithTag(tag).performScrollTo().assertIsDisplayed()
-                .performSemanticsAction(SemanticsActions.GetTextLayoutResult) { assertTrue(it(layouts)) }
-            assertTrue(layouts.isNotEmpty())
-            layouts.forEach { layout ->
-                assertEquals(2f, layout.layoutInput.density.fontScale, 0f)
-                assertEquals(AxTypography.bodyLarge.fontSize, layout.layoutInput.style.fontSize)
-                assertGlyphsFit(layout, layout.layoutInput.text.text)
-            }
+            compose.onNode(hasText(value) and hasAnyAncestor(hasTestTag(tag)), useUnmergedTree = true)
+                .assertIsDisplayed().performSemanticsAction(SemanticsActions.GetTextLayoutResult) { assertTrue(it(layouts)) }
+            val layout = layouts.single()
+            assertEquals(2f, layout.layoutInput.density.fontScale, 0f)
+            assertEquals(AxTypography.bodyLarge.fontSize, layout.layoutInput.style.fontSize)
+            assertGlyphsFit(layout, value)
         }
+        val hourBounds = compose.onNodeWithTag("reminder_hour").fetchSemanticsNode().boundsInRoot
+        val minuteBounds = compose.onNodeWithTag("reminder_minute").fetchSemanticsNode().boundsInRoot
+        assertEquals("Both wheels must be visible side by side", hourBounds.top, minuteBounds.top, 1f)
+        assertTrue(hourBounds.right <= minuteBounds.left)
         compose.onNodeWithText("시각 적용").assertIsDisplayed().assertIsEnabled()
         cancelPicker("시각 선택")
         val returnedTop = compose.onNodeWithTag("reminder_time").assertIsDisplayed().fetchSemanticsNode().boundsInRoot.top
         assertEquals("Closing the picker preserves the main dialog's scroll position", timeTop, returnedTop, 1f)
         assertCurrentValues()
+        compose.onNodeWithTag("reminder_date").performScrollTo().performClick()
+        assertCalendarOnly()
+        selectDay("15")
+        // Material 3 1.3.2 intentionally clears inner day/year Text semantics and
+        // exposes the full localized date on its selectable Surface instead.
+        // Native-view captures separately verify the calendar's rendered glyphs.
+        calendarDay("15").assertIsSelected().assertIsDisplayed()
+        compose.onNodeWithTag("reminder_date_apply").assertIsDisplayed().assertIsEnabled()
+        compose.onNodeWithTag("reminder_date_cancel").assertIsDisplayed()
+        listOf("apply", "cancel").forEach { action ->
+            val inset = compose.onNodeWithTag("reminder_date_${action}_inset").fetchSemanticsNode().boundsInRoot
+            val button = compose.onNodeWithTag("reminder_date_$action").fetchSemanticsNode().boundsInRoot
+            assertTrue("Each date action must retain bottom breathing room", inset.bottom - button.bottom >= 16f)
+        }
+        compose.onNodeWithText("날짜 적용").performClick()
+        compose.runOnIdle { assertEquals(localMillis(2099, 1, 15, 10, 15), dueAt.value) }
     }
 
-    private fun showDialog(fontScale: Float = 1f, initialDueAt: Long = localMillis(2099, 1, 2, 10, 15)) {
+    private fun showDialog(fontScale: Float = 1f, initialDueAt: Long = localMillis(2099, 1, 2, 10, 15), darkTheme: Boolean = false) {
         dueAt.value = initialDueAt
         RuntimeEnvironment.setFontScale(fontScale)
         host = Robolectric.buildActivity(ComponentActivity::class.java).setup()
         compose.runOnUiThread {
             host.get().setContent {
-                AxTheme {
+                AxTheme(darkTheme = darkTheme) {
                     AxButton(onClick = { visible.value = true }) { Text("알림 다시 열기") }
                     if (visible.value) AxReminderDialog(
                         dueAt = dueAt.value,
@@ -280,9 +346,28 @@ class AxReminderDialogTest {
         compose.onNodeWithText(title).assertDoesNotExist()
     }
 
-    private fun assertEditableValue(tag: String, expected: String) {
-        compose.onNodeWithTag(tag).assert(SemanticsMatcher.expectValue(SemanticsProperties.EditableText,
-            androidx.compose.ui.text.AnnotatedString(expected)))
+    private fun assertCalendarOnly() {
+        compose.onNodeWithTag("reminder_calendar").assertExists()
+        compose.onAllNodes(hasSetTextAction()).assertCountEquals(0)
+        compose.onNodeWithContentDescription("Switch to text input mode").assertDoesNotExist()
+    }
+
+    private fun calendarDay(day: String) = compose.onNode(hasText("January ${day.toInt()}, 2099", substring = true) and hasClickAction())
+
+    private fun selectDay(day: String) = calendarDay(day).performScrollTo().performClick()
+
+    private fun selectWheel(tag: String, value: Int) {
+        compose.onNodeWithTag(tag).performScrollToIndex(value)
+        assertWheelValue(tag, value.toString().padStart(2, '0'))
+    }
+
+    private fun wheelValue(tag: String): Int = compose.onNodeWithTag(tag).fetchSemanticsNode()
+        .config[SemanticsProperties.StateDescription].filter(Char::isDigit).toInt()
+
+    private fun assertWheelValue(tag: String, expected: String) {
+        val unit = if (tag == "reminder_hour") "시" else "분"
+        compose.onNodeWithTag(tag).assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "$expected$unit"))
+        compose.onNodeWithTag("${tag}_${expected.toInt()}").assertIsSelected()
     }
 
     private fun assertCurrentValues() {

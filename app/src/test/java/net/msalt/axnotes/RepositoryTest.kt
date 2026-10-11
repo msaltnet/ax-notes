@@ -49,12 +49,21 @@ class RepositoryTest {
     }
     @Test fun removalUnbookmarkAndCacheResetPreserveMultipleLinkedMemos(): Unit = runBlocking {
         repository.refresh(); personal.toggleBookmark("hello")
-        val first = personal.saveMemo(null,"hello","첫 메모","일하는 방식"); val second = personal.saveMemo(null,"hello","","두 번째 생각")
-        assertNotEquals(first,second); personal.toggleBookmark("hello"); assertNull(personal.dao.bookmark("hello")); assertEquals(2,personal.dao.memosFor("hello").size)
+        // Multiple records are a legacy fixture, not a supported new-save path.
+        val first = legacyMemo("legacy-first", "  첫 메모\r\ne\u0301  ", "일하는 방식", 123L)
+        val second = legacyMemo("legacy-second", "", "두 번째 생각", 456L)
+        personal.dao.putMemo(first); personal.dao.putMemo(second)
+        personal.toggleBookmark("hello"); assertNull(personal.dao.bookmark("hello")); assertEquals(2,personal.dao.memosFor("hello").size)
         files[url] = JSONObject(manifest()).put("notes",org.json.JSONArray()).toString(); repository.refresh()
         assertFalse(cache.dao().article("hello")!!.available); assertEquals(2,personal.dao.memosFor("hello").size)
         repository.clear(); assertNull(cache.dao().article("hello")); assertEquals("한국어 제목",personal.snapshot("hello").first)
-        personal.saveMemo(first,"hello","수정","캐시 없어도 수정 가능"); assertEquals(2,personal.dao.memosFor("hello").size)
+        personal.saveMemo(first.id,"hello","수정하려는 제목","캐시 없어도 수정 가능")
+        assertEquals(2,personal.dao.memosFor("hello").size)
+        val edited = personal.dao.memo(first.id)!!
+        assertEquals(first.title, edited.title)
+        assertEquals(first.createdAt, edited.createdAt)
+        assertEquals("캐시 없어도 수정 가능", edited.body)
+        assertEquals(second, personal.dao.memo(second.id))
     }
     @Test fun orphanMemoAndEmptyBodyAreRejected(): Unit = runBlocking {
         try { personal.saveMemo(null,"missing","","본문"); fail() } catch (_: Exception) { }
@@ -91,10 +100,123 @@ class RepositoryTest {
         assertEquals(a,cache.dao().article("second")!!.cachedRevision)
         release.complete(Unit); refreshing.await()
     }
-    @Test fun bookmarkUniquenessDoesNotConstrainMemos(): Unit = runBlocking {
+    @Test fun bookmarkUniquenessDoesNotDestroyLegacyMultipleMemos(): Unit = runBlocking {
         repository.refresh(); personal.toggleBookmark("hello"); val bookmark = personal.dao.bookmark("hello")!!
         personal.dao.putBookmark(bookmark.copy(titleSnapshot = "new")); assertEquals("new",personal.dao.bookmark("hello")!!.titleSnapshot)
-        repeat(3) { personal.saveMemo(null,"hello","","메모 $it") }
-        assertEquals(3,personal.dao.memosFor("hello").size)
+        val legacy = (0..2).map { legacyMemo("legacy-$it", "제목 $it", "메모 $it", it + 1L) }
+        legacy.forEach { personal.dao.putMemo(it) }
+        assertEquals(legacy.toSet(), personal.dao.memosFor("hello").toSet())
     }
+
+    @Test fun secondNewMemoIsRejectedWithoutOverwritingTheFirst(): Unit = runBlocking {
+        repository.refresh()
+        val firstId = personal.saveMemo(null, "hello", "", "첫 본문", "first-draft")
+        val first = personal.dao.memo(firstId)!!
+        for (draftId in listOf<String?>(null, "other-draft")) {
+            try {
+                personal.saveMemo(null, "hello", "", "저장되면 안 되는 두 번째 본문", draftId)
+                fail("Another new memo for the same article must be rejected")
+            } catch (_: IllegalArgumentException) { }
+        }
+        assertEquals(listOf(first), personal.dao.memosFor("hello"))
+        assertNull(personal.dao.memo("other-draft"))
+    }
+
+    @Test fun stableDraftRetriesAndExplicitEditsKeepTheSameRecordAndCreatedAt(): Unit = runBlocking {
+        repository.refresh()
+        val id = personal.saveMemo(null, "hello", "", "첫 저장", "same-draft")
+        val first = personal.dao.memo(id)!!
+        assertEquals(id, personal.saveMemo(null, "hello", "", "다시 저장", "same-draft"))
+        assertEquals(id, personal.saveMemo(id, "hello", "제목은 바뀌지 않음", "명시적 수정"))
+        val edited = personal.dao.memosFor("hello").single()
+        assertEquals(id, edited.id)
+        assertEquals(first.createdAt, edited.createdAt)
+        assertEquals(first.title, edited.title)
+        assertEquals("명시적 수정", edited.body)
+    }
+
+    @Test fun legacySiblingDoesNotBlockAnExistingDraftRetry(): Unit = runBlocking {
+        repository.refresh()
+        val first = legacyMemo("legacy-one", "  옛 제목\r\ne\u0301  ", "원래 본문", 123L)
+        val second = legacyMemo("legacy-two", "다른 제목", "건드리지 않을 본문", 456L)
+        personal.dao.putMemo(first); personal.dao.putMemo(second)
+        assertEquals(first.id, personal.saveMemo(null, "hello", "새 제목", "재시도 본문", first.id))
+        val saved = personal.dao.memo(first.id)!!
+        assertArrayEquals(first.title.toByteArray(Charsets.UTF_8), saved.title.toByteArray(Charsets.UTF_8))
+        assertEquals(first.createdAt, saved.createdAt)
+        assertEquals("재시도 본문", saved.body)
+        assertEquals(second, personal.dao.memo(second.id))
+    }
+
+    @Test fun concurrentNewDraftsAcrossRepositoryInstancesCreateOnlyOneMemo(): Unit = runBlocking {
+        repository.refresh()
+        val otherRepository = PersonalRepository(cache.dao(), privateDb)
+        val start = CompletableDeferred<Unit>()
+        val results = listOf(personal, otherRepository).mapIndexed { index, repo ->
+            async(Dispatchers.IO) {
+                start.await()
+                try {
+                    repo.saveMemo(null, "hello", "", "경쟁하는 본문 $index", "draft-$index")
+                    true
+                } catch (_: IllegalArgumentException) { false }
+            }
+        }
+        start.complete(Unit)
+        assertEquals(1, results.awaitAll().count { it })
+        assertEquals(1, personal.dao.memosFor("hello").size)
+    }
+
+    @Test fun deletedMemoEditAndCrossArticleDraftReuseAreRejected(): Unit = runBlocking {
+        repository.refresh()
+        val existing = personal.saveMemo(null, "hello", "", "보존할 본문", "existing-draft")
+        val before = personal.dao.memo(existing)!!
+        personal.dao.putBookmark(Bookmark("other", "다른 글", "https://ax.msalt.net/notes/other/", 1L))
+        try {
+            personal.saveMemo(null, "other", "", "연결을 바꾸지 않음", existing)
+            fail("A stable draft ID must never change its article")
+        } catch (_: IllegalArgumentException) { }
+        try {
+            personal.saveMemo("deleted-id", "hello", "", "삭제된 메모를 부활시키지 않음")
+            fail("Editing a deleted ID must not create another memo")
+        } catch (_: IllegalArgumentException) { }
+        assertEquals(before, personal.dao.memo(existing))
+        assertTrue(personal.dao.memosFor("other").isEmpty())
+        assertNull(personal.dao.memo("deleted-id"))
+    }
+
+    @Test fun separateArticlesCanEachHaveOneMemoAndDeletionAllowsReplacement(): Unit = runBlocking {
+        repository.refresh()
+        val first = personal.saveMemo(null, "hello", "", "첫 글 메모")
+        personal.dao.putBookmark(Bookmark("other", "다른 글", "https://ax.msalt.net/notes/other/", 1L))
+        personal.saveMemo(null, "other", "", "다른 글 메모")
+        personal.deleteMemo(first)
+        val replacement = personal.saveMemo(null, "hello", "", "대체 메모")
+        assertNotEquals(first, replacement)
+        assertEquals(replacement, personal.dao.memosFor("hello").single().id)
+        assertEquals(1, personal.dao.memosFor("other").size)
+    }
+
+    @Test fun reopeningSchemaOnePreservesAllLegacyMemoBytesWithoutMigration(): Unit = runBlocking {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val name = "legacy-multiple-memos-${System.nanoTime()}.db"
+        val legacy = listOf(
+            legacyMemo("old-one", "  옛 제목\r\ne\u0301  ", "첫 본문\r\n보존", 123L),
+            legacyMemo("old-two", "", "\n두 번째 본문", 456L)
+        )
+        try {
+            Room.databaseBuilder(context, PersonalDatabase::class.java, name).allowMainThreadQueries().build().let { disk ->
+                try { legacy.forEach { disk.dao().putMemo(it) } } finally { disk.close() }
+            }
+            Room.databaseBuilder(context, PersonalDatabase::class.java, name).allowMainThreadQueries().build().let { reopened ->
+                try {
+                    assertEquals(1, reopened.openHelper.readableDatabase.version)
+                    assertEquals(legacy.toSet(), reopened.dao().memosFor("hello").toSet())
+                } finally { reopened.close() }
+            }
+        } finally { context.deleteDatabase(name) }
+    }
+
+    private fun legacyMemo(id: String, title: String, body: String, time: Long) = Memo(
+        id, "hello", "한국어 제목", "https://ax.msalt.net/notes/hello/", title, body, time, time
+    )
 }

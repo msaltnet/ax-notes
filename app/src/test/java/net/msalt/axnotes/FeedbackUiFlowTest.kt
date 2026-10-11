@@ -24,6 +24,7 @@ import androidx.work.testing.WorkManagerTestInitHelper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import net.msalt.axnotes.data.Article
+import net.msalt.axnotes.ui.AxComponentTokens
 import net.msalt.axnotes.ui.AxTheme
 import net.msalt.axnotes.ui.AxViewModel
 import net.msalt.axnotes.ui.NotesRefreshBox
@@ -171,15 +172,16 @@ class FeedbackUiFlowTest {
     }
 
     @Test
-    fun editorialSearchShortcutAndMarginMemoUseExistingProtectedFlows() {
+    fun bottomSearchAndSingleReaderMemoUseExistingProtectedFlows() {
         waitForInitialFeed()
         compose.onNodeWithText("일이 달라지는 순간을 기록합니다.").assertIsDisplayed()
         compose.onNodeWithText("악소리 나는 AX 경험담.").assertIsDisplayed()
-        compose.onNodeWithTag("notes_search").assertHeightIsAtLeast(48.dp).performClick()
+        compose.onNodeWithTag("notes_search").assertDoesNotExist()
+        compose.onNodeWithText("제목, 문장, 메모로 찾아보기").assertDoesNotExist()
+        compose.onNodeWithTag("nav_search").performClick()
         compose.onNodeWithText("글과 메모에서 검색").assertExists()
         compose.onNodeWithTag("nav_notes").performClick()
         openArticle(sampleTitle)
-        compose.onNodeWithText("메모 0").performScrollTo().assertHasClickAction()
         compose.onNodeWithText("메모 남기기").performScrollTo().performClick()
         compose.onNodeWithTag("memo_editor").assertExists()
         compose.onNodeWithText("기억할 생각이나 적용할 아이디어").performTextInput("편집 디자인에서도 지킬 생각")
@@ -188,7 +190,7 @@ class FeedbackUiFlowTest {
         compose.onNodeWithText("계속 작성").performClick()
         compose.onNodeWithText("메모 저장").performScrollTo().performClick()
         compose.waitUntil(10000) { compose.onAllNodesWithTag("reader_pane").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithText("메모 1").performScrollTo().performClick()
+        compose.onNodeWithText("메모 수정").performScrollTo().performClick()
         compose.onNodeWithText("편집 디자인에서도 지킬 생각").assertExists()
     }
 
@@ -290,11 +292,9 @@ class FeedbackUiFlowTest {
             compose.onNodeWithText(label).assertHasClickAction()
         }
         compose.onNodeWithText("메모").assertDoesNotExist()
-        compose.onAllNodesWithText("메모 0").assertCountEquals(1)
+        compose.onAllNodesWithText("메모 0").assertCountEquals(0)
         compose.onAllNodesWithText("메모 남기기").assertCountEquals(1)
-        listOf("메모 0", "메모 남기기").forEach { label ->
-            compose.onNodeWithText(label).performScrollTo().assertHasClickAction().assertIsDisplayed()
-        }
+        compose.onNodeWithText("메모 남기기").performScrollTo().assertHasClickAction().assertIsDisplayed()
         compose.onNodeWithText("본문 저장됨").assertDoesNotExist()
         compose.onNodeWithTag("ax_masthead").assertIsDisplayed()
         listOf("원문", "원문 보기", "프로젝트", "작성자", authorName).forEach { label ->
@@ -302,12 +302,14 @@ class FeedbackUiFlowTest {
         }
         compose.onAllNodesWithText("소개", substring = true).assertCountEquals(0)
 
-        compose.onNodeWithText("북마크").performClick()
+        compose.onNodeWithText("북마크").performScrollTo().performClick()
         compose.waitUntil(10000) {
             compose.onAllNodesWithText("북마크됨").fetchSemanticsNodes().isNotEmpty()
         }
-        compose.onNodeWithText("메모 0").performScrollTo().performClick()
-        compose.onNodeWithText("글에 남긴 메모").assertExists()
+        compose.onNodeWithText("메모 남기기").performScrollTo().performClick()
+        compose.onNodeWithTag("memo_editor").assertExists()
+        compose.onNode(hasText("새 메모") and hasClickAction()).assertDoesNotExist()
+        compose.onAllNodes(hasSetTextAction()).assertCountEquals(1)
         compose.onNodeWithContentDescription("뒤로").performClick()
         compose.onNodeWithText("읽기 알림").performScrollTo().performClick()
         compose.onNodeWithText("나중에 읽기").assertExists()
@@ -396,6 +398,29 @@ class FeedbackUiFlowTest {
         compose.onNode(hasText(projectTitle) and hasText("글 2개")).assertExists()
         pressSystemBack()
         compose.onNodeWithTag("collection_전체").assertIsSelected()
+    }
+
+    @Test
+    @org.robolectric.annotation.GraphicsMode(org.robolectric.annotation.GraphicsMode.Mode.NATIVE)
+    fun collectionBackArrowHasNoExtraLeadingPaddingAndRetainsPageGutter() {
+        // Native font metrics keep the Korean label wider than Material's minimum
+        // button width, so this measures content padding rather than empty-space centering.
+        seedCollections()
+        for ((type, title) in listOf("시리즈" to seriesTitle, "프로젝트" to projectTitle)) {
+            compose.onNodeWithTag("collection_$type").performClick()
+            compose.onNodeWithText(title).performClick()
+            compose.onNodeWithTag("notes_list").performScrollToNode(hasTestTag("collection_back"))
+            val list = compose.onNodeWithTag("notes_list").fetchSemanticsNode().boundsInRoot
+            val button = compose.onNodeWithTag("collection_back").assertHeightIsAtLeast(48.dp)
+                .fetchSemanticsNode().boundsInRoot
+            val icon = compose.onNodeWithTag("collection_back_icon", useUnmergedTree = true)
+                .fetchSemanticsNode().boundsInRoot
+            val gutter = with(compose.density) { AxComponentTokens.pageMargin.toPx() }
+            assertEquals("The collection back button must retain the page gutter", list.left + gutter, button.left, 1f)
+            assertEquals("The arrow must not gain button content padding", button.left, icon.left, 1f)
+            compose.onNodeWithTag("collection_back").performClick()
+            scrollNotesToTop()
+        }
     }
 
     @Test

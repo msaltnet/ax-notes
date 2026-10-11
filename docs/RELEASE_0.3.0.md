@@ -147,3 +147,40 @@ Final actual-keyboard gate, 07:21–07:22 UTC: the installed final APK was pulle
 
 
 The 07:23 UTC numeric-input smoke check also passed on that exact final APK, with the real keyboard visible at 200%: complete hour/minute labels and values plus both actions remain above the IME. The independent reviewer confirmed this frame at 07:24 UTC. Both picker keyboard checks are thus final-APK results; only the prior launcher and numeric-scroll historical captures retain their earlier build identity.
+
+
+## Second PR 8 owner-feedback round — 2026-10-11 UTC
+
+This follow-up starts from `84274d806e3ec6a6eaf7bfa3a2a40524b1b0e81b` and addresses the [six new owner requests](https://github.com/msaltnet/ax-notes/pull/8#issuecomment-6108678891). It supersedes the earlier numeric picker and lower reader-memo descriptions above.
+
+- Home removes its duplicate search shortcut; persistent Search navigation remains. Series/project back arrows start at the page gutter without additional button-leading padding.
+- Date selection is calendar-only at every text scale, with no edit-to-numeric toggle and additional lower action spacing. Time selection shows hour and minute scroll wheels together, with center snapping, independent selection and accessible adjustment actions. Picker changes remain staged until Apply; Cancel and Back discard the current picker draft.
+- The reader has one memo action immediately after the reading reminder and no lower memo controls. A new article memo has body input only; a saved article memo reopens for editing.
+- New duplicate memo creation is rejected atomically under the existing shared personal-data mutex, including concurrent repository instances. Retrying the same draft ID remains idempotent.
+- Personal DB remains version 1, without migration or cleanup. Existing multiple memos, IDs, stored titles, bodies and creation timestamps survive unchanged on upgrade. Earlier multiple memos remain individually accessible and editable through the reader's single memo action, Library and Search. Existing titles are shown read-only and preserved byte-for-byte when a body is edited. No automatic deletion or merging occurs.
+- Untitled cards preview the first nonblank body line; this is display-only and does not create a stored title. Library introduction is exactly “기기에 보관된 북마크와 메모, 알림 입니다.”.
+- Package, version 0.3.0/code 3, notification scheduling and permissions are unchanged. No merge, deployment, public APK release, user-device installation, or PR-body rewrite is included.
+
+### Automated verification for the second round
+
+Executed on 2026-10-11 12:13–12:18 UTC with Temurin JDK 17.0.20.1, Gradle 8.11.1 and Android SDK 35:
+
+- `testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest compileReleaseKotlin`: **passed**.
+- **160 JVM/Robolectric tests across 20 suites; zero failures, errors or skips.** New coverage includes concurrent duplicate prevention, stable draft retries, legacy title/record preservation and disk reopening, removed-article Library/Search editing, protected drafts, actual scaled text, native collection-arrow geometry and six-week calendar swipe/selection.
+- **12 Python token export/mutation tests**, generated-token drift and authored-file whitespace checks pass.
+- **Lint: zero errors, 13 advisories**: 5 existing KTX suggestions, 6 unchanged dependency update notices and the 2 existing adaptive-icon resource advisories. No baseline, new suppression or dependency upgrade was introduced.
+- The body-only editor, Calendar-only date picker and simultaneous time wheels compile in both debug and release Kotlin. App and instrumentation APKs assemble; instrumentation assembly is not a device-suite pass.
+- Internal debug APK: **23,455,191 bytes**, SHA-256 `429f3f8ac9a5a0c1c7d7568584b680049476f55ae9867416c86b4bca0c7c6ac3`. Package `net.msalt.axnotes.internal`, 0.3.0/code 3, minSdk 26, targetSdk 35. The restored workspace generated a new debug signing certificate (`3ff105d800667e739f6b5483a80d4c503b9a9e9776d52c134e21c048a093428c`); this APK is not distributed as a physical-device update.
+- Independent source review found no confirmed production blocker. Independent native-pixel review verified 360×640dp/200% light and dark calendar days, sixth-week selection, year grid and both scroll wheels. These component captures are separate from installed-app execution. Two 100% native captures had repaint artifacts and are excluded from visual approval.
+- This repository has no hosted Android workflow; the results above are executed workspace checks, not hosted-CI results.
+
+### Installed-app verification for the second round
+
+The final internal APK was installed on a fresh disposable API 26 Google APIs x86 emulator and pulled back from the package installation. The installed SHA-256 exactly matches `429f3f8ac9a5a0c1c7d7568584b680049476f55ae9867416c86b4bca0c7c6ac3` above. Captures use the eight bundled sample articles, not a live-network success claim.
+
+- At approximately 411dp width / 100% text / light mode, Home has no duplicate upper Search shortcut; the cached article body renders with the bundled fonts and one upper memo action. Real touch swipes changed both hour/minute wheels from 22:40 to 23:42; Apply correctly updated the reminder summary to 11:42 PM. The calendar and year grid have readable labels, no numeric-entry toggle and fully visible, padded footer actions.
+- At 360×640dp / 200% system text / dark mode, the calendar remains fully readable and selecting October 12 updates the reminder date correctly. Scrolling the reminder content preserves accessible, fixed Cancel/Schedule actions. Both time wheels and Apply/Cancel fit at full text scale. Real opposing swipes changed 23:42 to 22:44, and Apply correctly produced 10:44 PM without changing the selected date. Independent review of these unedited installed-app pixels found no clipping or selection mismatch.
+- The old software-only emulator had System UI ANRs during initial boot and configuration changes, a slow first install/launch and a transient blank initial WebView frame. Only settled frames support the UI results; this is not a startup-performance pass. The system ANR and incomplete frames are excluded from visual approval.
+- Actual installed-app interactions complement the complete native/JVM legacy-memo, standalone-record, accessibility-semantics and small-screen regressions; they do not replace physical-device, TalkBack, modern-Android, live-feed networking or device instrumentation-suite verification.
+
+Screenshots remain private rather than adding new image assets to the public repository. No APK is delivered: a compatible update for the existing phone must be built with its original local signing key, without uninstalling or clearing app data. The PR remains a normal unmerged review candidate; its earlier body is not rewritten by this source update.

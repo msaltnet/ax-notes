@@ -113,11 +113,13 @@ internal fun AxOutlinedButton(
 @Composable
 internal fun AxTextButton(
     onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true,
-    destructive: Boolean = false, content: @Composable RowScope.() -> Unit
+    destructive: Boolean = false, contentPadding: PaddingValues = ButtonDefaults.TextButtonContentPadding,
+    content: @Composable RowScope.() -> Unit
 ) {
     TextButton(
         onClick = onClick, modifier = modifier.heightIn(min = AxSize.minTouch), enabled = enabled,
         shape = RoundedCornerShape(AxSize.buttonRadius),
+        contentPadding = contentPadding,
         colors = ButtonDefaults.textButtonColors(contentColor = if (destructive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary),
         content = content
     )

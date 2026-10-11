@@ -145,7 +145,14 @@ fun AxApp(target: MutableStateFlow<String?>, vm: AxViewModel = viewModel()) {
                 value == "library" -> { screen = "library"; libraryType = "읽기 알림" }
                 value.startsWith("screen:") -> { screen = value.removePrefix("screen:") }
                 value.startsWith("memo:") -> memos.find { it.id == value.removePrefix("memo:") }?.let(::beginEdit)
-                value == "newMemo" -> beginEdit(null)
+                value == "newMemo" -> {
+                    val linkedMemos = memos.filter { it.articleId == selectedId }
+                    when (linkedMemos.size) {
+                        0 -> beginEdit(null)
+                        1 -> beginEdit(linkedMemos.single())
+                        else -> screen = "articleMemos"
+                    }
+                }
                 else -> openArticle(value.removePrefix("article:"))
             }
         }
@@ -180,10 +187,10 @@ fun AxApp(target: MutableStateFlow<String?>, vm: AxViewModel = viewModel()) {
                         feed = feed, busy = busy, scrollState = notesScroll,
                         collectionType = collectionType, collectionId = collectionId,
                         onCollection = ::selectCollection, onRefresh = vm::refresh,
-                        onArticle = { navigate("article:$it") }, onSearch = { navigate("screen:search") }
+                        onArticle = { navigate("article:$it") }
                     )
                     "library" -> LazyColumn(state = libraryScroll, modifier = Modifier.fillMaxSize().testTag("library_list"), contentPadding = PaddingValues(AxComponentTokens.pageMargin), verticalArrangement = Arrangement.spacedBy(AxSpacing.md)) {
-                        item { AxPageHeading("내 보관함", "북마크와 메모, 읽기 알림을 이 기기에 보관합니다"); Spacer(Modifier.height(AxSpacing.lg)); Row(Modifier.horizontalScroll(rememberScrollState()).selectableGroup(), horizontalArrangement = Arrangement.spacedBy(AxSpacing.sm)) { listOf("북마크", "메모", "읽기 알림").forEach { name -> AxSectionTab(selected = libraryType == name, onClick = { libraryType = name }, label = name) } } }
+                        item { AxPageHeading("내 보관함", "기기에 보관된 북마크와 메모, 알림 입니다."); Spacer(Modifier.height(AxSpacing.lg)); Row(Modifier.horizontalScroll(rememberScrollState()).selectableGroup(), horizontalArrangement = Arrangement.spacedBy(AxSpacing.sm)) { listOf("북마크", "메모", "읽기 알림").forEach { name -> AxSectionTab(selected = libraryType == name, onClick = { libraryType = name }, label = name) } } }
                         when(libraryType) {
                             "북마크" -> { if(bookmarks.isEmpty()) item { EmptyState("저장한 글이 없어요", "글의 북마크 버튼으로 다시 읽을 글을 모으세요") }; items(bookmarks, key = { it.articleId }) { saved -> SavedCard(saved.titleSnapshot, if(articles.none { it.id == saved.articleId }) "목록에 없는 글 · 저장 당시 제목" else "북마크", { navigate("article:${saved.articleId}") }, isSelected = screen in detailScreens && selectedId == saved.articleId) { AxTextButton(onClick = { vm.toggleBookmark(saved.articleId) }) { Text("해제") } } } }
                             "메모" -> { if(memos.isEmpty()) item { EmptyState("남긴 메모가 없어요", "글을 열고 메모를 남겨보세요") }; items(memos, key = { it.id }) { memo -> MemoCard(memo, { edit(memo) }, { navigate("article:${memo.articleId}") }, { requestDelete(memo) }) } }
@@ -215,10 +222,15 @@ fun AxApp(target: MutableStateFlow<String?>, vm: AxViewModel = viewModel()) {
                         val article by articleFlow.collectAsStateWithLifecycle(null)
                         val fallbackTitle = bookmarks.find { it.articleId == selectedId }?.titleSnapshot ?: memos.find { it.articleId == selectedId }?.titleSnapshot ?: reminders.find { it.articleId == selectedId }?.titleSnapshot ?: "글"
                         val fallbackUrl = bookmarks.find { it.articleId == selectedId }?.urlSnapshot ?: memos.find { it.articleId == selectedId }?.urlSnapshot ?: reminders.find { it.articleId == selectedId }?.urlSnapshot
+                        val selectedMemos = memos.filter { it.articleId == selectedId }
                         Column(Modifier.fillMaxSize().testTag("reader_pane")) {
-                            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = AxSpacing.sm), horizontalArrangement = Arrangement.spacedBy(AxSpacing.xs)) {
+                            Row(Modifier.fillMaxWidth().testTag("reader_actions").horizontalScroll(rememberScrollState()).padding(horizontal = AxSpacing.sm), horizontalArrangement = Arrangement.spacedBy(AxSpacing.xs)) {
                                 AxTextButton(onClick = { vm.toggleBookmark(selectedId) }, modifier = Modifier.semantics { stateDescription = if(bookmarks.any { it.articleId == selectedId }) "저장됨" else "저장 안 됨" }) { Icon(painterResource(if(bookmarks.any { it.articleId == selectedId }) R.drawable.ic_bookmark else R.drawable.ic_bookmark_outline), null); Spacer(Modifier.width(AxSpacing.xs)); Text(if(bookmarks.any { it.articleId == selectedId }) "북마크됨" else "북마크") }
                                 AxTextButton(onClick = { reminderArticleId = selectedId; dueAt = reminders.find { it.articleId == selectedId && it.state in listOf("scheduled", "blocked") }?.dueAt ?: (System.currentTimeMillis() + 3600000); reminderDialog = true }) { Icon(painterResource(R.drawable.ic_reminder), null); Spacer(Modifier.width(AxSpacing.xs)); Text("읽기 알림") }
+                                AxTextButton(onClick = { edit(null) }, modifier = Modifier.testTag("reader_memo_action")) {
+                                    Icon(painterResource(R.drawable.ic_memo), null); Spacer(Modifier.width(AxSpacing.xs))
+                                    Text(when (selectedMemos.size) { 0 -> "메모 남기기"; 1 -> "메모 수정"; else -> "메모 보기" })
+                                }
                                 AxTextButton(onClick = { (article?.canonicalUrl ?: fallbackUrl)?.let { shareArticle(context, article?.title ?: fallbackTitle, it) { vm.message.value = it } } }) { Icon(Icons.Default.Share, null); Spacer(Modifier.width(AxSpacing.xs)); Text("공유") }
                             }
                             HorizontalDivider()
@@ -226,22 +238,20 @@ fun AxApp(target: MutableStateFlow<String?>, vm: AxViewModel = viewModel()) {
                             if(article?.cachedRevision != null && article?.cachedRevision != article?.wantedRevision) Warning("이전에 저장한 본문입니다. 새 버전 다운로드를 다시 시도하세요")
                             if(article?.bodyHtml != null) ReaderWebView(article!!, Modifier.weight(1f)) { vm.message.value = it }
                             else { Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(AxSpacing.xxl)) { Text(article?.title ?: fallbackTitle, style = MaterialTheme.typography.headlineMedium); Spacer(Modifier.height(AxSpacing.xxl)); EmptyState("본문을 아직 받지 못했어요", "인터넷에 연결하고 다시 시도하세요. 개인 메모는 계속 볼 수 있어요"); AxButton(onClick = { vm.load(selectedId); if(article == null) vm.refresh() }, modifier = Modifier.padding(top = AxSpacing.md)) { Text("다시 시도") } } }
-                            HorizontalDivider()
-                            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = AxSpacing.sm), verticalAlignment = Alignment.CenterVertically) {
-                                AxTextButton(onClick = { screen = "articleMemos" }) { Icon(painterResource(R.drawable.ic_memo), null, Modifier.size(AxSize.supportingIcon)); Spacer(Modifier.width(AxSpacing.sm)); Text("메모 ${memos.count { it.articleId == selectedId }}") }
-                                AxTextButton(onClick = { edit(null) }) { Icon(Icons.Default.Add, null, Modifier.size(AxSize.supportingIcon)); Text("메모 남기기") }
-                            }
                         }
                     }
                     "articleMemos" -> LazyColumn(state = memoScroll, modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(AxComponentTokens.pageMargin), verticalArrangement = Arrangement.spacedBy(AxSpacing.md)) {
-                        item { AxButton(onClick = { edit(null) }) { Icon(Icons.Default.Add, null); Text("새 메모") } }
                         val selectedMemos = memos.filter { it.articleId == selectedId }
-                        if(selectedMemos.isEmpty()) item { EmptyState("이 글의 첫 생각을 남겨보세요", "북마크와 별개로 여러 메모를 저장할 수 있어요") }
+                        item { Text("이전에 남긴 메모를 모두 보관하고 있어요. 새 메모를 추가하지 않고 기존 메모를 수정할 수 있습니다.", style = MaterialTheme.typography.bodyMedium) }
+                        if(selectedMemos.isEmpty()) item { EmptyState("남긴 메모가 없어요", "글로 돌아가 메모를 남겨보세요") }
                         items(selectedMemos, key = { it.id }) { memo -> MemoCard(memo, { edit(memo) }, { screen = "reader" }, { requestDelete(memo) }) }
                     }
                     "editor" -> Column(Modifier.fillMaxSize().imePadding().verticalScroll(rememberScrollState()).padding(AxComponentTokens.pageMargin).testTag("memo_editor"), verticalArrangement = Arrangement.spacedBy(AxSpacing.md)) {
                         Text("글에 연결된 메모 · 이 기기에만 저장", style = MaterialTheme.typography.labelMedium)
-                        AxTextField(editorTitle, { editorTitle = it.take(500) }, label = { Text("제목 (선택)") }, modifier = Modifier.fillMaxWidth(), singleLine = true, enabled = !saving)
+                        if (editorTitle.isNotBlank()) {
+                            Text("이전에 저장한 제목", style = MaterialTheme.typography.labelMedium, color = scheme.onSurfaceVariant)
+                            Text(editorTitle, style = MaterialTheme.typography.titleMedium, modifier = Modifier.testTag("legacy_memo_title"))
+                        }
                         AxTextField(editorBody, { editorBody = it.take(100000) }, label = { Text("기억할 생각이나 적용할 아이디어") }, modifier = Modifier.fillMaxWidth().heightIn(min = AxSize.editorMinHeight), minLines = 6, maxLines = 14, enabled = !saving)
                         AxButton(onClick = { saving = true; scope.launch { try { vm.saveMemo(editorId, selectedId, editorTitle, editorBody, editorDraftId); screen = editorReturn; originalTitle = editorTitle; originalBody = editorBody } catch(e: Exception) { if(e is kotlinx.coroutines.CancellationException) throw e; vm.message.value = e.message ?: "저장하지 못했습니다" } finally { saving = false } } }, enabled = editorBody.isNotBlank(), loading = saving, modifier = Modifier.fillMaxWidth()) { Text(if(saving) "저장 중…" else "메모 저장") }
                     }
@@ -399,8 +409,21 @@ fun AxApp(target: MutableStateFlow<String?>, vm: AxViewModel = viewModel()) {
         }
     }
 }
-@Composable internal fun SavedCard(title: String, subtitle: String, onClick: () -> Unit, isSelected: Boolean = false, subtitleMaxLines: Int = Int.MAX_VALUE, actions: @Composable () -> Unit) { AxCardFrame(selected = isSelected) { Column(Modifier.padding(AxComponentTokens.cardPadding)) { Column(Modifier.fillMaxWidth().heightIn(min = AxSize.minTouch).clickable(onClick = onClick).padding(vertical = AxSpacing.sm)) { Text(title, style = MaterialTheme.typography.titleMedium, maxLines = 3, overflow = TextOverflow.Ellipsis); Text(subtitle, maxLines = subtitleMaxLines, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }; actions() } } }
-@Composable private fun MemoCard(memo: Memo, onEdit: () -> Unit, onArticle: () -> Unit, onDelete: () -> Unit) { SavedCard(memo.title.ifBlank { "제목 없는 메모" }, memo.body.take(180), onEdit, subtitleMaxLines = 3) { Text("연결된 글 · ${memo.titleSnapshot}", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = AxSpacing.sm)); Row(Modifier.horizontalScroll(rememberScrollState())) { AxTextButton(onClick = onArticle) { Text("글 읽기") }; AxTextButton(onClick = onEdit) { Text("수정") }; AxTextButton(onClick = onDelete, destructive = true) { Text("삭제") } } } }
+@Composable internal fun SavedCard(title: String, subtitle: String, onClick: () -> Unit, isSelected: Boolean = false, subtitleMaxLines: Int = Int.MAX_VALUE, actions: @Composable () -> Unit) { AxCardFrame(selected = isSelected) { Column(Modifier.padding(AxComponentTokens.cardPadding)) { Column(Modifier.fillMaxWidth().heightIn(min = AxSize.minTouch).clickable(onClick = onClick).padding(vertical = AxSpacing.sm)) { Text(title, style = MaterialTheme.typography.titleMedium, maxLines = 3, overflow = TextOverflow.Ellipsis); if (subtitle.isNotBlank()) Text(subtitle, maxLines = subtitleMaxLines, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }; actions() } } }
+@Composable
+private fun MemoCard(memo: Memo, onEdit: () -> Unit, onArticle: () -> Unit, onDelete: () -> Unit) {
+    val bodyLines = memo.body.lineSequence().dropWhile { it.isBlank() }.toList()
+    val previewTitle = memo.title.ifBlank { bodyLines.firstOrNull().orEmpty().take(180) }
+    val previewBody = if (memo.title.isBlank()) bodyLines.drop(1).joinToString("\n").trimStart().take(180) else memo.body.take(180)
+    SavedCard(previewTitle, previewBody, onEdit, subtitleMaxLines = 3) {
+        Text("연결된 글 · ${memo.titleSnapshot}", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = AxSpacing.sm))
+        Row(Modifier.horizontalScroll(rememberScrollState())) {
+            AxTextButton(onClick = onArticle) { Text("글 읽기") }
+            AxTextButton(onClick = onEdit) { Text("수정") }
+            AxTextButton(onClick = onDelete, destructive = true) { Text("삭제") }
+        }
+    }
+}
 private fun formatTime(time: Long) = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(time))
 private fun reminderLabel(state: String) = when(state) { "scheduled" -> "예정"; "blocked" -> "알림 차단됨"; "delivered" -> "알림 전송 · 아직 열지 않음"; "opened" -> "열어봄"; else -> "전송 확인 중" }
 
