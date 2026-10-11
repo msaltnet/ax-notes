@@ -189,7 +189,7 @@ class FeedbackUiFlowTest {
         compose.onNodeWithText("저장하지 않은 메모가 있어요").assertExists()
         compose.onNodeWithText("계속 작성").performClick()
         compose.onNodeWithText("메모 저장").performScrollTo().performClick()
-        compose.waitUntil(10000) { compose.onAllNodesWithTag("reader_pane").fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(10000) { compose.onAllNodesWithText("메모 수정").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("메모 수정").performScrollTo().performClick()
         compose.onNodeWithText("편집 디자인에서도 지킬 생각").assertExists()
     }

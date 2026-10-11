@@ -18,6 +18,7 @@ import android.text.style.MetricAffectingSpan
 import android.text.style.RelativeSizeSpan
 import android.util.TypedValue
 import android.view.Gravity
+import android.view.View
 import android.view.ViewGroup
 import android.webkit.*
 import android.widget.FrameLayout
@@ -174,7 +175,7 @@ internal fun applyReaderFallbackLayout(view: TextView, viewportWidthPx: Int) {
 }
 
 @Composable
-fun ReaderWebView(article: Article, modifier: Modifier = Modifier, onError: (String) -> Unit) {
+fun ReaderWebView(article: Article, modifier: Modifier = Modifier, visible: Boolean = true, onError: (String) -> Unit) {
     val currentError by rememberUpdatedState(onError)
     var scrollFraction by rememberSaveable(article.id) { mutableFloatStateOf(0f) }
     val colors = MaterialTheme.colorScheme
@@ -270,12 +271,17 @@ fun ReaderWebView(article: Article, modifier: Modifier = Modifier, onError: (Str
             update = { container ->
                 val background = colors.surface.toArgb()
                 container.setBackgroundColor(background)
+                container.visibility = if (visible) View.VISIBLE else View.INVISIBLE
+                container.importantForAccessibility = if (visible) View.IMPORTANT_FOR_ACCESSIBILITY_AUTO else View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
+                container.descendantFocusability = if (visible) ViewGroup.FOCUS_AFTER_DESCENDANTS else ViewGroup.FOCUS_BLOCK_DESCENDANTS
+                if (!visible) container.clearFocus()
                 val child = container.getChildAt(0)
                 if (child is WebView) {
                     // AndroidView is retained on theme changes; update its native canvas too.
                     child.setBackgroundColor(background)
                     child.settings.textZoom = (fontScale * 100).toInt().coerceAtLeast(1)
-                    val identity = article to html
+                    // Cache timestamps and other non-rendered metadata are not a new page.
+                    val identity = article.canonicalUrl to html
                     if (container.tag != identity) {
                         container.tag = identity
                         child.loadDataWithBaseURL(article.canonicalUrl, html, "text/html", "UTF-8", null)

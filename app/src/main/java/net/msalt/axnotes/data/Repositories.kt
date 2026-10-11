@@ -93,7 +93,7 @@ class PersonalRepository(private val content: ContentDao, val db: PersonalDataba
         // The same gate covers lookup and write, including overlapping save requests.
         require(old != null || dao.memosFor(articleId).isEmpty()) { "이 글에 메모가 이미 있습니다. 기존 메모를 수정하세요" }
         val now = System.currentTimeMillis(); val savedId = old?.id ?: newMemoId ?: UUID.randomUUID().toString()
-        // Titles from earlier versions remain readable and byte-for-byte unchanged.
+        // The title field is no longer displayed; retain stored bytes without a destructive migration.
         val savedTitle = old?.title ?: FeedContract.normalize(title.trim())
         dao.putMemo(Memo(savedId, articleId, snapshotTitle, url, savedTitle, FeedContract.normalize(body), old?.createdAt ?: now, now))
         savedId

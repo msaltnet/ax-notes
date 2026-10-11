@@ -184,3 +184,39 @@ The final internal APK was installed on a fresh disposable API 26 Google APIs x8
 - Actual installed-app interactions complement the complete native/JVM legacy-memo, standalone-record, accessibility-semantics and small-screen regressions; they do not replace physical-device, TalkBack, modern-Android, live-feed networking or device instrumentation-suite verification.
 
 Screenshots remain private rather than adding new image assets to the public repository. No APK is delivered: a compatible update for the existing phone must be built with its original local signing key, without uninstalling or clearing app data. The PR remains a normal unmerged review candidate; its earlier body is not rewritten by this source update.
+
+
+## Third PR 8 owner-feedback round — 2026-10-11 UTC
+
+This follow-up starts from `dc07fb0791dbff689d75fe90ee1cae217cb44e7e` and addresses the [three new owner requests](https://github.com/msaltnet/ax-notes/pull/8#issuecomment-6110062475). It supersedes the second round's legacy-title and special multiple-memo presentation above.
+
+- Memo titles are absent from the editor and from Library/Search card previews. Every card uses the first nonblank body line. The reader's single action edits the latest memo; newest edit time, newest creation time, then ascending record ID provide a deterministic tie-break. Additional stored records remain ordinary titleless Library/Search entries. No stored record is erased, and the personal DB remains version 1 without migration or cleanup.
+- Cached article entry starts from the already-observed article instead of a transient null/missing-content screen. Unknown article IDs wait for their first database result before showing the missing-content state.
+- Opening the memo keeps the one current reader attached but hidden and inaccessible. Cancel, discard and save restore the same loaded WebView within the same adaptive layout. Activity recreation or a one-/two-pane layout change creates a new native view with saved reader state. Leaving the flow or changing articles releases it normally; it is not an unbounded view cache. Non-rendered metadata changes no longer reload identical HTML.
+- A fading edge and named 48dp paging arrows expose overflow in the reader action row. Horizontal swipes remain supported, full-size text is retained, and a separate arrow gutter pages forward or returns to the start without covering action targets.
+- Package, version 0.3.0/code 3, feed contract, notification scheduling and permissions remain unchanged. No merge, deployment, public APK release, user-device installation, new public screenshot asset, or PR-body rewrite is included.
+
+### Verification for the third round
+
+- Controlled JVM reproductions against the unchanged `dc07fb0` production source demonstrated that memo entry destroyed the loaded reader and that a cache-timestamp-only change reloaded identical HTML. The corresponding candidate tests exercise the same paths without the destruction/reload.
+- **172 JVM/Robolectric tests across 22 suites; zero failures, errors or skips.** Coverage includes titleless old/new/orphan memo flows and deterministic latest-memo selection; retained-view cancel/discard/save, hidden-reader focus/accessibility, cleanup and recreation; actual touch swipes and paging, Share hit targets, RTL, 200% text and width changes.
+- **12 Python token export/mutation tests**, generated-token drift and authored-file whitespace checks pass.
+- Independent source review found no confirmed blocker. It identified and verified fixes for hidden-reader keyboard access and overlapping action-row touch targets. Hardware Tab input in the multiline test editor correctly invokes the existing dirty-draft protection; the clean-cancel test restores its empty fixture before checking Cancel.
+
+- `testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest compileReleaseKotlin`: **passed**, 2026-10-11 15:21–15:25 UTC, using Temurin 17.0.20.1, Gradle 8.11.1 and SDK 35.
+- **Lint: zero errors, 11 advisories** (5 existing KTX suggestions, 4 dependency-version notices and 2 existing adaptive-icon resource advisories). No suppression, dependency change or baseline was added; update-notice counts depend on the build environment.
+- App and instrumentation APKs assemble; release Kotlin compiles. Instrumentation assembly alone is not a device-test result. There is no hosted Android workflow.
+
+- Internal debug APK: **23,752,447 bytes**, SHA-256 `6346b7e1c5d3d784c8fc81d020b523ae158d3d7a0b1d7f9040f5060e1d47a1e9`. Package `net.msalt.axnotes.internal`, 0.3.0/code 3, minSdk 26, targetSdk 35. Its new workspace debug certificate SHA-256 is `3b0b8cdad73f1d010da5857de21a5316a5914a3ddd7e96cc86e1f6d0807830cb`; it is not delivered as a phone update.
+
+### Installed-app check for the third round
+
+A focused instrumentation test passed on the exact final APK above, installed in a disposable read-only overlay of the API 26 Google APIs x86 emulator. Pulling the installed `base.apk` back reproduced the exact `6346b7e1…1d47a1e9` SHA-256. The run uses bundled public sample articles, not live-feed networking.
+
+- The native test waits for WebView's visual-state commit, rather than equating a resource-load progress percentage with a rendered document. A real scrolled article survives memo Cancel and Save with the same WebView instance and exact scroll offset.
+- Actual touch paging through the new overflow control reaches the visible Share action and returns to the start. The focused native test passes **1/1**; this is not a full device-instrumentation-suite pass.
+- Earlier baseline attempts were obstructed by a system-server watchdog and System UI ANRs. The original AVD and locks were preserved; a supported read-only overlay was used, and an opt-in test-only fixture selected the exact system dialog's Wait action once. No production recovery code, data reset or migration was added.
+- After that recovery, the installed unchanged `dc07fb0` baseline rendered its reader but crashed with Compose's `LayoutNode should be attached to an owner` after the memo tap. A clean before/after visual timing comparison was therefore not obtained. The final candidate completed the reader/memo test without another recovery. This does not establish the crash's root cause or certify that every perceived flicker on every device is eliminated.
+- Independent pixel review accepts the settled Share/end-arrow and post-save reader frames. The editor/input and early reader captures are transitional and are excluded as evidence of typed input, Save enablement or before/after timing. Screenshots remain private. Physical-device, TalkBack, modern-Android, live-network, native 200%/rotation/IME-layout and original-signing-key upgrade checks remain outside this focused native result. The full JVM suite includes 200% typography, rotation/recreation and RTL regressions.
+
+The later native-harness-only refinement was rebuilt with `assembleDebugAndroidTest lintDebug`; the production APK hash did not change. Independent source review passed. The PR remains an unmerged review candidate, with no APK distribution, deployment, user-device installation or PR-body edit.

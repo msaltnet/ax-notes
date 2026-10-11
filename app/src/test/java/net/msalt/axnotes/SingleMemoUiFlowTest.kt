@@ -13,6 +13,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import net.msalt.axnotes.data.Memo
 import net.msalt.axnotes.ui.AxViewModel
+import net.msalt.axnotes.ui.latestMemoForArticle
 import org.junit.Assert.*
 import org.junit.Rule
 import org.junit.Test
@@ -99,20 +100,20 @@ class SingleMemoUiFlowTest {
     }
 
     @Test
-    fun existingReadOnlyTitleAndDirtyBodySurviveRecreationCancelAndSave() {
+    fun existingTitleStaysHiddenWhileDirtyBodySurvivesRecreationCancelAndSave() {
         val vm = waitForNotes()
         val articleId = vm.articles.value.single { it.title == articleTitle }.id
         val original = memo("legacy-single", articleId, legacyTitle, "원래 본문", 123L)
         seed(vm, original)
         openArticle()
         openMemoAction("메모 수정")
-        assertReadOnlyTitle(legacyTitle)
+        assertTitlelessEditor(legacyTitle)
         compose.onNodeWithText(bodyLabel).performTextReplacement("아직 저장하지 않은 수정")
         compose.onNodeWithContentDescription("뒤로").performClick()
         compose.activityRule.scenario.recreate()
         compose.onNodeWithText("저장하지 않은 메모가 있어요").assertExists()
         compose.onNodeWithText("계속 작성").performClick()
-        assertReadOnlyTitle(legacyTitle)
+        assertTitlelessEditor(legacyTitle)
         compose.onNodeWithText(bodyLabel).assertTextContains("아직 저장하지 않은 수정")
         assertEquals(original, storedMemos(vm, articleId).single())
         compose.onNodeWithContentDescription("뒤로").performClick()
@@ -127,49 +128,53 @@ class SingleMemoUiFlowTest {
     }
 
     @Test
-    fun multipleLegacyMemosRemainIndividuallyEditableWithoutAnewMemoEntry() {
+    fun readerEditsLatestMemoAndLibraryKeepsOtherTitlelessRecordsAccessible() {
         val vm = waitForNotes()
         val articleId = vm.articles.value.single { it.title == articleTitle }.id
         val first = memo("legacy-first", articleId, legacyTitle, "첫 레거시 본문", 123L)
         val second = memo("legacy-second", articleId, "두 번째 제목", "둘째 레거시 본문", 456L)
         seed(vm, first, second)
         openArticle()
-        openMemoAction("메모 보기")
-        compose.onNodeWithText("글에 남긴 메모").assertExists()
-        compose.onNodeWithText("새 메모").assertDoesNotExist()
-        compose.onNodeWithText("메모 남기기").assertDoesNotExist()
-        compose.onNodeWithText(legacyTitle).performScrollTo().performClick()
-        assertReadOnlyTitle(legacyTitle)
-        compose.onNodeWithText(bodyLabel).performTextReplacement("첫 메모만 수정")
-        compose.onNodeWithText("메모 저장").performScrollTo().performClick()
-        compose.waitUntil(10000) {
-            compose.onAllNodesWithText("글에 남긴 메모").fetchSemanticsNodes().isNotEmpty()
-        }
-        compose.onNodeWithText("두 번째 제목").performScrollTo().assertIsDisplayed()
+        openMemoAction("메모 수정")
+        compose.onNodeWithText("메모 보기").assertDoesNotExist()
+        compose.onNodeWithText("글에 남긴 메모").assertDoesNotExist()
+        assertTitlelessEditor(second.title)
+        compose.onNodeWithText(bodyLabel).assertTextContains(second.body)
+        compose.onNodeWithText(bodyLabel).performTextReplacement("최신 메모만 수정")
+        saveAndWaitForReader("메모 수정")
         val persisted = storedMemos(vm, articleId).associateBy { it.id }
         assertEquals(setOf(first.id, second.id), persisted.keys)
-        assertPreservedIdentity(first, persisted.getValue(first.id), "첫 메모만 수정")
-        assertEquals(second, persisted.getValue(second.id))
+        assertEquals(first, persisted.getValue(first.id))
+        assertPreservedIdentity(second, persisted.getValue(second.id), "최신 메모만 수정")
         compose.onNodeWithContentDescription("뒤로").performClick()
-        compose.onNodeWithTag("reader_memo_action").assertTextEquals("메모 보기")
+        compose.onNodeWithTag("nav_library").performClick()
+        compose.onNodeWithText("메모", substring = false).performClick()
+        compose.onNodeWithText(legacyTitle).assertDoesNotExist()
+        compose.onNodeWithText(second.title).assertDoesNotExist()
+        compose.onNodeWithText(first.body).performScrollTo().performClick()
+        assertTitlelessEditor(first.title)
+        compose.onNodeWithText(bodyLabel).assertTextContains(first.body)
     }
 
     @Test
-    fun orphanedMemoCanBeEditedFromLibraryReaderAndSearchWithoutLosingItsTitle() {
+    fun orphanedMemoCanBeEditedFromLibraryReaderAndSearchWithoutDisplayingItsTitle() {
         val vm = waitForNotes()
         val original = memo("orphan-memo", "removed-article", legacyTitle, "orphan-marker 원래 본문", 321L)
         seed(vm, original)
         compose.onNodeWithTag("nav_library").performClick()
         compose.onNodeWithText("메모", substring = false).performClick()
-        compose.onNodeWithText(legacyTitle).performScrollTo().performClick()
-        assertReadOnlyTitle(legacyTitle)
+        compose.onNodeWithText(original.body).performScrollTo().performClick()
+        assertTitlelessEditor(legacyTitle)
         compose.onNodeWithText(bodyLabel).performTextReplacement("orphan-marker 보관함에서 수정")
         compose.onNodeWithText("메모 저장").performScrollTo().performClick()
         compose.waitUntil(10000) { compose.onAllNodesWithTag("library_list").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("글 읽기").performScrollTo().performClick()
+        compose.waitUntil(10000) {
+            compose.onAllNodesWithText("원문을 현재 목록에서 찾을 수 없어요. 저장한 메모와 북마크는 유지됩니다").fetchSemanticsNodes().isNotEmpty()
+        }
         compose.onNodeWithText("원문을 현재 목록에서 찾을 수 없어요. 저장한 메모와 북마크는 유지됩니다").assertExists()
         openMemoAction("메모 수정")
-        assertReadOnlyTitle(legacyTitle)
+        assertTitlelessEditor(legacyTitle)
         compose.onNodeWithText(bodyLabel).assertTextContains("orphan-marker 보관함에서 수정")
         compose.onNodeWithContentDescription("뒤로").performClick()
         compose.onNodeWithTag("reader_pane").assertExists()
@@ -177,9 +182,10 @@ class SingleMemoUiFlowTest {
         compose.onNodeWithTag("library_list").assertExists()
         compose.onNodeWithTag("nav_search").performClick()
         compose.onNodeWithText("글과 메모에서 검색").performTextInput("orphan-marker")
-        compose.waitUntil(10000) { compose.onAllNodesWithText(legacyTitle).fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithText(legacyTitle).performScrollTo().performClick()
-        assertReadOnlyTitle(legacyTitle)
+        compose.waitUntil(10000) { compose.onAllNodesWithText("orphan-marker 보관함에서 수정").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText(legacyTitle).assertDoesNotExist()
+        compose.onNodeWithText("orphan-marker 보관함에서 수정").performScrollTo().performClick()
+        assertTitlelessEditor(legacyTitle)
         compose.onNodeWithText(bodyLabel).performTextReplacement("orphan-marker 검색에서 수정")
         compose.onNodeWithText("메모 저장").performScrollTo().performClick()
         compose.waitUntil(10000) { compose.onAllNodesWithTag("search_results").fetchSemanticsNodes().isNotEmpty() }
@@ -208,11 +214,11 @@ class SingleMemoUiFlowTest {
         compose.onNodeWithText("변경 버리고 나가기").performClick()
         openMemoAction("메모 수정")
         compose.onNodeWithText(bodyLabel).assertTextContains(incoming.body)
-        assertReadOnlyTitle(incoming.title)
+        assertTitlelessEditor(incoming.title)
     }
 
     @Test
-    fun twoHundredPercentTextKeepsLegacyTitleBodyAndSaveReachable() {
+    fun twoHundredPercentTextKeepsTitlelessBodyAndSaveReachable() {
         val vm = waitForNotes()
         val articleId = vm.articles.value.single { it.title == articleTitle }.id
         val original = memo("large-text-legacy", articleId, "작은 화면에서도 보존할 예전 제목", "수정 전", 456L)
@@ -221,12 +227,23 @@ class SingleMemoUiFlowTest {
         compose.activityRule.scenario.recreate()
         openArticle()
         openMemoAction("메모 수정")
-        compose.onNodeWithTag("legacy_memo_title").performScrollTo().assertIsDisplayed()
-        assertReadOnlyTitle(original.title)
+        assertTitlelessEditor(original.title)
         compose.onNodeWithText(bodyLabel).performScrollTo().performTextReplacement("큰 글자에서도 저장")
         compose.onNodeWithText("메모 저장").performScrollTo().assertIsDisplayed().performClick()
         compose.waitUntil(10000) { compose.onAllNodesWithTag("reader_pane").fetchSemanticsNodes().isNotEmpty() }
         assertPreservedIdentity(original, storedMemos(vm, articleId).single(), "큰 글자에서도 저장")
+    }
+
+    @Test
+    fun latestMemoSelectionIsStableAcrossInputOrderAndTimestampTies() {
+        val first = memo("a", "article", "ignored", "first", 100L).copy(updatedAt = 500L)
+        val laterCreation = memo("b", "article", "ignored", "second", 200L).copy(updatedAt = 500L)
+        val sameTimes = laterCreation.copy(id = "c")
+        val unrelated = laterCreation.copy(id = "newer-other", articleId = "other", updatedAt = 999L)
+        val records = listOf(sameTimes, unrelated, first, laterCreation)
+        assertEquals(laterCreation, latestMemoForArticle(records, "article"))
+        assertEquals(laterCreation, latestMemoForArticle(records.reversed(), "article"))
+        assertNull(latestMemoForArticle(records, "missing"))
     }
 
     private fun waitForNotes(): AxViewModel {
@@ -256,9 +273,10 @@ class SingleMemoUiFlowTest {
         }
     }
 
-    private fun assertReadOnlyTitle(title: String) {
-        compose.onNodeWithTag("legacy_memo_title").assertTextEquals(title)
-            .assert(hasSetTextAction().not())
+    private fun assertTitlelessEditor(title: String) {
+        compose.onNodeWithTag("legacy_memo_title").assertDoesNotExist()
+        compose.onNodeWithText("이전에 저장한 제목").assertDoesNotExist()
+        compose.onNodeWithText(title).assertDoesNotExist()
         compose.onAllNodes(hasSetTextAction()).assertCountEquals(1)
         compose.onNodeWithText("제목 (선택)").assertDoesNotExist()
     }
