@@ -45,9 +45,11 @@ object AxReaderStyle {
             .coerceIn(minHorizontalPadding.toFloat(), maxHorizontalPadding.toFloat())
 }
 
-// A single packaged font is served by ReaderWebView. This URL is never fetched from the network.
+// Exact packaged font URLs served only by ReaderWebView, never fetched from the network.
 internal const val readerFontHost = "appassets.androidplatform.net"
-internal const val readerFontUrl = "https://$readerFontHost/ax-font/editorial.ttf"
+internal const val readerFontUrl = "https://$readerFontHost/ax-font/editorial.otf"
+internal const val readerBodyFontUrl = "https://$readerFontHost/ax-font/body.ttf"
+internal const val readerUiFontUrl = "https://$readerFontHost/ax-font/ui.ttf"
 
 internal fun Color.readerCssColor(): String =
     String.format(Locale.ROOT, "#%06x", toArgb() and 0x00ffffff)
@@ -70,14 +72,16 @@ internal fun buildReaderHtml(article: Article, colors: ColorScheme): String {
         """<!doctype html>
         <html lang="ko"><head>
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src https:; font-src $readerFontUrl; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
+        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src https:; font-src $readerFontUrl $readerBodyFontUrl $readerUiFontUrl; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
         <style>
-        @font-face{font-family:'AX Editorial';src:url('$readerFontUrl') format('truetype');font-weight:400;font-style:normal;font-display:swap}
+        @font-face{font-family:'AX Editorial';src:url('$readerFontUrl') format('opentype');font-weight:600;font-style:normal;font-display:swap}
+        @font-face{font-family:'AX Body';src:url('$readerBodyFontUrl') format('truetype');font-weight:100 900;font-style:normal;font-display:swap}
+        @font-face{font-family:'AX UI';src:url('$readerUiFontUrl') format('truetype');font-weight:400;font-style:normal;font-display:swap}
         html{height:100%;background:$surface}
-        body{box-sizing:border-box;max-width:${maxContentWidth}px;margin:0 auto;padding:${pagePadding}px ${pagePadding}px ${bottomPadding}px;padding:${pagePadding}px clamp(${minHorizontalPadding}px,${horizontalPaddingViewportPercent}vw,${maxHorizontalPadding}px) ${bottomPadding}px;background:$surface;color:$onSurface;font-family:system-ui,sans-serif;font-size:${bodyFontSize}px;line-height:${bodyLineHeight.toDouble() / bodyFontSize};overflow-wrap:break-word;overflow-wrap:anywhere}
+        body{box-sizing:border-box;max-width:${maxContentWidth}px;margin:0 auto;padding:${pagePadding}px ${pagePadding}px ${bottomPadding}px;padding:${pagePadding}px clamp(${minHorizontalPadding}px,${horizontalPaddingViewportPercent}vw,${maxHorizontalPadding}px) ${bottomPadding}px;background:$surface;color:$onSurface;font-family:'AX Body',system-ui,sans-serif;font-size:${bodyFontSize}px;line-height:${bodyLineHeight.toDouble() / bodyFontSize};overflow-wrap:break-word;overflow-wrap:anywhere}
         .article-header{margin:0 0 ${sectionSpacing}px;padding-bottom:${blockSpacing}px;border-bottom:1px solid $outlineVariant}
-        .eyebrow{margin:0 0 ${blockPadding}px;font-family:system-ui,sans-serif;font-size:${supportingFontSize}px;line-height:${supportingLineHeight.toDouble() / supportingFontSize};font-weight:600;letter-spacing:0.04em;color:$onSurfaceVariant}
-        h1,h2,h3,h4,h5,h6,blockquote{font-family:'AX Editorial','Noto Serif CJK KR',serif;font-weight:400;word-break:keep-all;overflow-wrap:anywhere}
+        .eyebrow{margin:0 0 ${blockPadding}px;font-family:'AX UI',system-ui,sans-serif;font-size:${supportingFontSize}px;line-height:${supportingLineHeight.toDouble() / supportingFontSize};font-weight:400;letter-spacing:0.04em;color:$onSurfaceVariant}
+        h1,h2,h3,h4,h5,h6,blockquote{font-family:'AX Editorial','Noto Serif KR',serif;font-weight:600;word-break:keep-all;overflow-wrap:anywhere}
         h1{font-size:${titleFontSize}px;line-height:${titleLineHeight.toDouble() / titleFontSize};margin:0 0 ${blockSpacing}px;letter-spacing:-0.025em}
         h2{font-size:${headingFontSize}px;line-height:${headingLineHeight.toDouble() / headingFontSize};margin:${sectionSpacing}px 0 ${blockPadding}px;padding-top:${blockSpacing}px;border-top:1px solid $outlineVariant}
         h3,h4,h5,h6{font-size:${subheadingFontSize}px;line-height:${subheadingLineHeight.toDouble() / subheadingFontSize};margin:${sectionSpacing}px 0 ${blockPadding}px}
@@ -94,7 +98,7 @@ internal fun buildReaderHtml(article: Article, colors: ColorScheme): String {
         blockquote{border-left:2px solid $primary;padding-left:${blockSpacing}px;margin:${sectionSpacing}px 0;color:$onSurfaceVariant;font-size:${quoteFontSize}px;line-height:${quoteLineHeight.toDouble() / quoteFontSize}}
         blockquote>:last-child{margin-bottom:0}
         figure{margin:${blockSpacing}px 0}
-        figcaption,.meta{font-family:system-ui,sans-serif;font-size:${supportingFontSize}px;line-height:${supportingLineHeight.toDouble() / supportingFontSize};color:$onSurfaceVariant}
+        figcaption,.meta{font-family:'AX UI',system-ui,sans-serif;font-size:${supportingFontSize}px;line-height:${supportingLineHeight.toDouble() / supportingFontSize};color:$onSurfaceVariant}
         .meta{margin:0}
         hr{border:0;border-top:1px solid $outlineVariant;margin:${sectionSpacing}px 0}
         </style></head><body><main><article><header class="article-header"><p class="eyebrow">$eyebrow</p><h1>$title</h1><p class="meta"><time>$publishedDate</time></p></header>${article.bodyHtml.orEmpty()}</article></main></body></html>""".trimIndent()

@@ -29,6 +29,8 @@ import net.msalt.axnotes.ui.applyReaderFallbackStyle
 import net.msalt.axnotes.ui.buildReaderFallbackText
 import net.msalt.axnotes.ui.buildReaderHtml
 import net.msalt.axnotes.ui.readerCssColor
+import net.msalt.axnotes.ui.readerBodyFontUrl
+import net.msalt.axnotes.ui.readerUiFontUrl
 import net.msalt.axnotes.ui.readerFontUrl
 import net.msalt.axnotes.ui.readerResourceResponse
 import org.jsoup.Jsoup
@@ -142,7 +144,7 @@ class AxReaderStyleTest {
         listOf(AxLightColors, AxDarkColors).forEach { colors ->
             val document = Jsoup.parse(buildReaderHtml(article, colors))
             assertEquals(
-                "default-src 'none'; img-src https:; font-src $readerFontUrl; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'",
+                "default-src 'none'; img-src https:; font-src $readerFontUrl $readerBodyFontUrl $readerUiFontUrl; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'",
                 document.selectFirst("meta[http-equiv=Content-Security-Policy]")!!.attr("content")
             )
             assertTrue(document.select("script,iframe,form,base").isEmpty())
@@ -203,13 +205,29 @@ class AxReaderStyleTest {
 
 
     @Test
-    fun editorialHierarchyUsesTheBundledSerifWithoutChangingTheSansBody() {
+    fun editorialHierarchyUsesTheThreeOfflineWebsiteFontFamilies() {
         val document = Jsoup.parse(buildReaderHtml(article, AxLightColors))
-        assertEquals("system-ui,sans-serif", cssRule(document, "body")["font-family"])
-        assertEquals("'AX Editorial','Noto Serif CJK KR',serif", cssRule(document, "h1,h2,h3,h4,h5,h6,blockquote")["font-family"])
-        assertEquals("400", cssRule(document, "h1,h2,h3,h4,h5,h6,blockquote")["font-weight"])
-        assertEquals("url('$readerFontUrl') format('truetype')", cssRule(document, "@font-face")["src"])
-        assertEquals("swap", cssRule(document, "@font-face")["font-display"])
+        assertTrue(cssRule(document, "body")["font-family"]!!.startsWith("'AX Body',"))
+        assertTrue(cssRule(document, "h1,h2,h3,h4,h5,h6,blockquote")["font-family"]!!.startsWith("'AX Editorial',"))
+        assertTrue(cssRule(document, "figcaption,.meta")["font-family"]!!.startsWith("'AX UI',"))
+        assertEquals("600", cssRule(document, "h1,h2,h3,h4,h5,h6,blockquote")["font-weight"])
+        val faces = Regex("@font-face\\{([^}]*)}").findAll(document.selectFirst("style")!!.data()).map { match ->
+            match.groupValues[1].split(';').filter { it.contains(':') }
+                .associate { it.substringBefore(':') to it.substringAfter(':') }
+        }.toList()
+        assertEquals(3, faces.size)
+        val expected = mapOf(
+            "'AX Editorial'" to ("url('$readerFontUrl') format('opentype')" to "600"),
+            "'AX Body'" to ("url('$readerBodyFontUrl') format('truetype')" to "100 900"),
+            "'AX UI'" to ("url('$readerUiFontUrl') format('truetype')" to "400")
+        )
+        assertEquals(expected.keys, faces.map { it["font-family"] }.toSet())
+        faces.forEach { face ->
+            val (source, weight) = expected.getValue(face.getValue("font-family"))
+            assertEquals(source, face["src"])
+            assertEquals(weight, face["font-weight"])
+            assertEquals("swap", face["font-display"])
+        }
         assertEquals("4px", cssRule(document, "pre")["border-radius"])
         assertEquals("0 0 40px", cssRule(document, ".article-header")["margin"])
         assertEquals("underline", cssRule(document, "a")["text-decoration"])
@@ -232,33 +250,46 @@ class AxReaderStyleTest {
     }
 
     @Test
-    fun bundledFontIsServedOnlyForItsExactGetSubresourceAndNeverFetched() {
+    fun allThreeFontsAreServedOnlyForTheirExactGetSubresourceAndNeverFetched() {
         val context = ApplicationProvider.getApplicationContext<Context>()
-        val response = readerResourceResponse(context, readerFontUrl, isMainFrame = false, method = "GET")!!
-        assertEquals("font/ttf", response.mimeType)
-        assertEquals(200, response.statusCode)
-        assertEquals("*", response.responseHeaders["Access-Control-Allow-Origin"])
-        val bundledBytes = context.resources.openRawResource(R.font.nanum_myeongjo_regular).use { it.readBytes() }
-        assertTrue(bundledBytes.isNotEmpty())
-        assertTrue(response.data.use { it.readBytes() }.contentEquals(bundledBytes))
+        val resources = listOf(
+            Triple(readerFontUrl, R.font.noto_serif_kr_semibold, "font/otf"),
+            Triple(readerBodyFontUrl, R.font.pretendard_variable, "font/ttf"),
+            Triple(readerUiFontUrl, R.font.ibm_plex_sans_kr_regular, "font/ttf")
+        )
+        resources.forEach { (url, resource, mimeType) ->
+            val response = readerResourceResponse(context, url, isMainFrame = false, method = "GET")!!
+            assertEquals(mimeType, response.mimeType)
+            assertEquals(200, response.statusCode)
+            assertEquals("*", response.responseHeaders["Access-Control-Allow-Origin"])
+            val bundledBytes = context.resources.openRawResource(resource).use { it.readBytes() }
+            assertTrue(bundledBytes.isNotEmpty())
+            assertTrue("$url must return the exact packaged font", response.data.use { it.readBytes() }.contentEquals(bundledBytes))
+            listOf(
+                url to true,
+                "$url?redirect=other" to false,
+                "$url#fragment" to false,
+                url.replace("/ax-font/", "/ax-font/../ax-font/") to false,
+                url.replace("https://", "http://") to false
+            ).forEach { (target, mainFrame) -> assertBlockedFontResource(context, target, mainFrame, "GET") }
+            listOf("POST", "HEAD", "OPTIONS", "get").forEach { method -> assertBlockedFontResource(context, url, false, method) }
+        }
         listOf(
-            readerFontUrl to true,
-            "$readerFontUrl?redirect=other" to false,
-            "$readerFontUrl#fragment" to false,
             "https://appassets.androidplatform.net/ax-font/other.ttf" to false,
+            "https://appassets.androidplatform.net/ax-font/editorial.ttf" to false,
             "https://APPASSETS.ANDROIDPLATFORM.NET/unknown" to false,
-            "file:///android_res/font/nanum_myeongjo_regular.ttf" to false,
+            "file:///android_res/font/noto_serif_kr_semibold.otf" to false,
             "content://fonts/editorial" to false,
             "http://example.com/image.png" to false,
             "https://example.com/page" to true
-        ).forEach { (url, mainFrame) ->
-            val blocked = readerResourceResponse(context, url, mainFrame, "GET")!!
-            assertEquals("Blocked resource $url", 0, blocked.data.use { it.readBytes().size })
-        }
-        val post = readerResourceResponse(context, readerFontUrl, isMainFrame = false, method = "POST")!!
-        assertEquals(0, post.data.use { it.readBytes().size })
+        ).forEach { (url, mainFrame) -> assertBlockedFontResource(context, url, mainFrame, "GET") }
         // Existing HTTPS article images still use WebView's normal request path and CSP.
         assertEquals(null, readerResourceResponse(context, "https://ax.msalt.net/image.png", false, "GET"))
+    }
+
+    private fun assertBlockedFontResource(context: Context, url: String, mainFrame: Boolean, method: String) {
+        val blocked = readerResourceResponse(context, url, mainFrame, method)!!
+        assertEquals("Blocked resource $method $url", 0, blocked.data.use { it.readBytes().size })
     }
 
     @Test
@@ -266,6 +297,7 @@ class AxReaderStyleTest {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val view = TextView(context).apply { setTextIsSelectable(true) }
         applyReaderFallbackStyle(view, AxLightColors, fontScale = 1f)
+        assertEquals(ResourcesCompat.getFont(context, R.font.pretendard_variable), view.typeface)
         applyReaderFallbackContent(view, article, AxLightColors)
         val styled = view.text as Spanned
         val titleStart = styled.toString().indexOf(article.title)
@@ -275,7 +307,7 @@ class AxReaderStyleTest {
         val titleFont = styled.getSpans(titleStart, titleEnd, ReaderEditorialTypefaceSpan::class.java).single()
         val paint = TextPaint()
         titleFont.updateMeasureState(paint)
-        assertEquals(ResourcesCompat.getFont(context, R.font.nanum_myeongjo_regular), paint.typeface)
+        assertEquals(ResourcesCompat.getFont(context, R.font.noto_serif_kr_semibold), paint.typeface)
         assertTrue(view.isTextSelectable)
         val bodyStart = styled.toString().indexOf(article.bodyText!!)
         Selection.setSelection(view.text as Spannable, bodyStart, bodyStart + 3)

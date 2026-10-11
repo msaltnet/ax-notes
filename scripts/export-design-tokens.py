@@ -80,9 +80,18 @@ def export():
         families = {"SansSerif": "sans-serif", "Serif": "serif", "Monospace": "monospace", "Cursive": "cursive", "Default": "system-ui"}
         family_match = re.fullmatch(r"FontFamily\.(\w+)", attributes.get("fontFamily", ""))
         if attributes.get("fontFamily") == "AxEditorialFont":
-            if "internal val AxEditorialFont = FontFamily(Font(R.font.nanum_myeongjo_regular, FontWeight.Normal))" not in source:
+            if "internal val AxEditorialFont = FontFamily(Font(R.font.noto_serif_kr_semibold, FontWeight.SemiBold))" not in source:
                 raise ValueError("Unsupported editorial font family resource")
-            family = "Nanum Myeongjo"
+            family = "Noto Serif KR"
+        elif attributes.get("fontFamily") == "AxUiFont":
+            expected = """internal val AxUiFont = FontFamily(
+    Font(R.font.ibm_plex_sans_kr_regular, FontWeight.Normal),
+    Font(R.font.ibm_plex_sans_kr_medium, FontWeight.Medium),
+    Font(R.font.ibm_plex_sans_kr_semibold, FontWeight.SemiBold)
+)"""
+            if expected not in source:
+                raise ValueError("Unsupported UI font family resource")
+            family = "IBM Plex Sans KR"
         elif family_match and family_match[1] in families:
             family = families[family_match[1]]
         else:
@@ -108,7 +117,7 @@ def export():
             raise ValueError(f"Unsupported reader token declaration: {line}")
         key, value = match.groups()
         tokens["reader"][key] = {"$type": "number", "$value": int(value)}
-    tokens["reader"]["$description"] = "Font sizes/line heights: CSS px or native sp. Layout: CSS px or native dp. horizontalPaddingViewportPercent is a percentage. See AxReaderStyle.kt."
+    tokens["reader"]["$description"] = "Offline reader fonts: Noto Serif KR 600 headings, Pretendard Variable body, IBM Plex Sans KR metadata. Font sizes/line heights: CSS px or native sp. Layout: CSS px or native dp. horizontalPaddingViewportPercent is a percentage. See AxReaderStyle.kt."
     role_map = {"canvas": "background", "text": "onSurface", "supportingText": "onSurfaceVariant",
                 "action": "primary", "onAction": "onPrimary", "actionContainer": "primaryContainer",
                 "onActionContainer": "onPrimaryContainer", "card": "surface",

@@ -1,0 +1,10 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <!-- Both glyphs remain inside the central 66dp circular safe zone. -->
+    <group android:translateX="26.745" android:translateY="71.135" android:scaleX="0.046" android:scaleY="-0.046">
+        <path android:fillColor="#F3F0E7" android:pathData="M13 0L13 33L98 44L331 745L419 745L658 41L736 33L736 0L412 0L412 33L514 44L450 241L208 241L146 44L240 33L240 0ZM440 275L328 622L219 275Z" />
+        <group android:translateX="460">
+            <path android:fillColor="#F3F0E7" android:pathData="M12 0L12 33L101 44L301 345L93 701L22 708L22 741L350 741L350 708L250 698L394 452L543 696L446 708L446 741L685 741L685 708L592 697L413 421L635 41L712 33L712 0L378 0L378 33L478 42L320 313L156 46L255 33L255 0Z" />
+        </group>
+    </group>
+</vector>

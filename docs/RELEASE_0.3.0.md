@@ -1,5 +1,7 @@
 # AX Notes 0.3.0 feedback candidate
 
+Current candidate: the 2026-10-11 PR 8 owner-feedback and website-brand follow-up. Its final automated result is 143 tests / 19 suites, 12 token checks and zero lint errors; the final section records its distinct APK and runtime scope. Earlier candidate counts, screenshots and installation notes below are historical, not inherited verification.
+
 Based on merged main `6be0aedc0625e2b5c3679e0cbc4459c623bcdbfc`. Implements [feedback #6](https://github.com/msaltnet/ax-notes/issues/6); not a published release.
 
 ## Changes
@@ -89,3 +91,59 @@ Physical devices, TalkBack, remote WebView images, current WebView versions and 
 ## Installation safety
 
 No release or installation on a user's device is included. The disposable cloud emulator is only a verification target. The supplied debug artifact is signed with this workspace's Android debug certificate; compatibility with an existing installation's signing key has not been established. Any in-place update requires the same signing certificate as the installed app. Version-name cleanup does not change that requirement. Do not uninstall the existing app, clear data or publish a differently signed replacement to work around an update failure.
+
+## PR 8 owner-feedback refinement — 2026-10-11 UTC
+
+This follow-up starts from `60ab79ba348afe1c885fe158283d1500e67afe70`, preserving its adaptive-test application-factory isolation fix. It addresses the [owner's eight review comments](https://github.com/msaltnet/ax-notes/pull/8#issuecomment-6105732055).
+
+- Reminder date/time selectors show the chosen values and a combined confirmation summary. Filled 예약 and outlined 취소 buttons distinguish the actions. Date and numeric-time pickers stay in the app theme, use staged edits, and return to the previous summary scroll position.
+- Date/time conversions preserve local calendar dates and wall-clock time; invalid numeric values and past reservations are rejected. Existing notification permission and scheduling behavior remain in place.
+- The always-present reader cache badge and duplicate upper memo button are removed. Offline cache availability remains meaningful in the article list; Settings explains automatic caching and title/summary-only entries. Reader memo count and direct entry are grouped in one lower area.
+- Home and reader use one masthead. Library, Search and Settings share a title/description component and persistent root navigation. Selected navigation uses a filled contrasting tile.
+- List/section titles increase to 18sp, excerpts/body copy and controls to 16sp, supporting copy to 14sp, and input text to 17sp. Reader body remains 18sp. Settings now has separated headings, body copy, actions and consistent vertical spacing without a duplicate app title.
+- No database schema, package, version or personal-data change is introduced.
+
+### Follow-up installation safety
+
+The restored cloud build environment has a newly generated debug signing certificate. Its APK is an internal verification artifact and is not distributed as an update to the previously installed physical-device build. Use the existing local build environment and its original signing key for a compatible, data-preserving update. Do not uninstall or clear data to bypass signature mismatch.
+
+The earlier physical-device note in PR 8 applies to the previous `60ab79b` build. This follow-up has not been installed on the user's phone, merged, deployed or released.
+
+### Intermediate verification before website-brand alignment
+
+Historical evidence for the eight-comment refinement, before the later website-font/icon and IME changes. On that intermediate production source, `testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest compileReleaseKotlin` passed on Temurin JDK 17.0.20.1 / Gradle 8.11.1 / SDK 35.
+
+- JVM/Robolectric: 135 tests across 18 suites; zero failures, errors or skips.
+- New reminder coverage: 7 UI regressions and 5 local-date/time helper tests. Both 360dp and 411dp windows use the actual 200% Android text configuration; tests check full glyph bounds, exact scalable typography, selection updates, cancel/reopen, invalid input, past-time recovery and scroll restoration.
+- Token export/mutation: 11 tests pass; generated token drift and whitespace checks pass.
+- Lint: zero errors, 9 advisory warnings (5 existing KTX suggestions, 4 unchanged dependency update notices).
+- Debug app and instrumentation APKs build; release Kotlin compiles. Building instrumentation is not an instrumentation-suite execution claim.
+- Internal APK: `net.msalt.axnotes.internal`, version `0.3.0`, code `3`, minSdk 26, targetSdk 35. SHA-256: `4da0461bd49e62b69c58f583b5eaef75877ef3d91568871512401a86f4b0d1c1`.
+- Independent source review found no blocking issue. The repository still has no hosted Android workflow; these are cloud-workspace results.
+
+## Website-brand alignment and final follow-up verification — 2026-10-11 UTC
+
+This section supersedes the intermediate 135-test/hash result above. It includes the owner's subsequent request to align app typography, copy and icon with ax.msalt.net, plus the real-keyboard issue found during verification.
+
+- Headings use original Noto Serif KR 600; UI uses IBM Plex Sans KR 400/500/600; reader prose uses Pretendard Variable. All are bundled offline with original notices. The official Noto regional file preserves all modern Hangul without an app-generated glyph subset. See [font/icon provenance](FONT_ASSETS.md).
+- The shared masthead and adaptive/monochrome launcher use the existing site's overlapping serif AX geometry. Website copy is reused on the journal and About section; the approved app palette, mobile hierarchy, larger type and existing behavior remain.
+- Both reminder pickers now account for keyboard and system-bar insets. The date host also fills its outer window before Material wraps/centers the picker Surface; this avoids the API-26 WRAP-height inset failure. This resolves the intermediate API 26 observation where 200% text pushed actions beneath the numeric keyboard. The production window-policy regression waits for the actual displayed picker rather than reading its dismissed predecessor.
+- Offline license UI identifies every font family and preserves all original notices, including Noto's embedded Adobe copyright attribution.
+
+Final automated rerun after the date-window-height fix, 2026-10-11 07:06–07:08 UTC:
+
+- `testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest compileReleaseKotlin`: **passed** on Temurin 17.0.20.1, Gradle 8.11.1 and SDK 35.
+- **143 JVM/Robolectric tests, 19 suites, zero failures/errors/skips.** Six brand-resource tests cover font coverage/weights/notices, adaptive geometry/raster equivalence and API 33 monochrome. Reader tests verify all three exact font endpoints and fallback typography; reminder tests cover actual 200% scaling and API 26 window policy.
+- **12 Python token export/mutation tests** and generated-token drift check pass. Authored-file whitespace check passes; upstream license text remains verbatim.
+- **Lint: zero errors, 11 advisories.** Nine existing suggestions remain (5 KTX, 4 unchanged dependency versions). Two new resource advisories concern the redundant API-26 qualifier at minSdk 26 and the base API-26 adaptive XML lacking monochrome; the API-33 override supplies the same monochrome icon for both icon and roundIcon and is covered by the API-33 resource test. No lint baseline or broad suppression was added.
+- Debug and instrumentation APKs build; release Kotlin compiles. Instrumentation assembly is not an instrumentation-suite pass.
+- Internal debug APK: **24,463,735 bytes**, SHA-256 `df867b96d360ed4fe58f9b7e7a1608d8b0148d65501a5c4dc6b03be90bcb54c5`. Package `net.msalt.axnotes.internal`, 0.3.0/code 3, minSdk 26, targetSdk 35. Its workspace debug certificate SHA-256 is `33a026ceb460d71bc9a5bb37509cd221322360d4a922b5ac1ae7032a499785b7`.
+- The APK remains internal because it uses a newly generated workspace key; compatibility with the existing physical-device build's key has not been established. A data-preserving update must be built in the original local environment using its original key; do not uninstall or clear app data.
+
+Independent source/security and selected native-pixel review found no blocker. The separately executed 11-case capture harness is not counted among the 143 regressions. Its Settings light/dark and 200% renders, updated reminder controls, API-28 adaptive masks and API-33 monochrome vector are documented in [current evidence](feedback-evidence/README.md). These native-Skia renders are not device screenshots; real keyboard evidence is identified separately there. No current physical-device, TalkBack, modern-launcher-themed-interaction or signed-upgrade certification is claimed. No hosted Android workflow exists.
+
+
+Final actual-keyboard gate, 07:21–07:22 UTC: the installed final APK was pulled back and independently confirmed to match the `df867b96…` SHA-256 above. The date picker passes with the real keyboard both shown and hidden at 200% system text, including complete date input and fully visible Cancel/Apply controls. Independent review of the original pixels passed. This complements the preceding candidate's numeric-keyboard/minute-scroll and actual-launcher checks; it is not a claim of physical-device, modern Android or final WebView-prose validation. The exact scopes and privately delivered capture filenames are recorded in [current evidence](feedback-evidence/README.md).
+
+
+The 07:23 UTC numeric-input smoke check also passed on that exact final APK, with the real keyboard visible at 200%: complete hour/minute labels and values plus both actions remain above the IME. The independent reviewer confirmed this frame at 07:24 UTC. Both picker keyboard checks are thus final-APK results; only the prior launcher and numeric-scroll historical captures retain their earlier build identity.

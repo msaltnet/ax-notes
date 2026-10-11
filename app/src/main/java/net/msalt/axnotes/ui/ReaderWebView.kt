@@ -96,7 +96,7 @@ internal fun applyReaderFallbackContent(view: TextView, article: Article, colors
         // Subtract it once here rather than adding body leading to the 44sp title.
         val titleMetricsHeight = ceil(AxReaderStyle.titleLineHeight * scaledDensity - view.lineSpacingExtra).toInt()
         setSpan(ReaderTitleLineHeightSpan(titleMetricsHeight), titleStart, titleEnd, flags)
-        ResourcesCompat.getFont(view.context, R.font.nanum_myeongjo_regular)?.let {
+        ResourcesCompat.getFont(view.context, R.font.noto_serif_kr_semibold)?.let {
             setSpan(ReaderEditorialTypefaceSpan(it), titleStart, titleEnd, flags)
         }
         listOf(0 to readerFallbackExplanation.length, dateStart to dateEnd).forEach { (start, end) ->
@@ -110,17 +110,23 @@ internal fun applyReaderFallbackContent(view: TextView, article: Article, colors
 }
 
 /**
- * Only this exact font subresource can resolve to packaged bytes. Unknown paths on
+ * Only these exact font subresources can resolve to packaged bytes. Unknown paths on
  * the synthetic host are blocked rather than falling through to a network fetch.
  */
 internal fun readerResourceResponse(context: Context, url: String, isMainFrame: Boolean, method: String): WebResourceResponse? {
-    if (url == readerFontUrl && !isMainFrame && method == "GET") {
+    val packagedFont = when (url) {
+        readerFontUrl -> R.font.noto_serif_kr_semibold to "font/otf"
+        readerBodyFontUrl -> R.font.pretendard_variable to "font/ttf"
+        readerUiFontUrl -> R.font.ibm_plex_sans_kr_regular to "font/ttf"
+        else -> null
+    }
+    if (packagedFont != null && !isMainFrame && method == "GET") {
         // Fonts are packaged as uncompiled resource bytes. Android can open them
         // here even though openRawResource's lint annotation only names R.raw.
         @SuppressLint("ResourceType")
-        val fontBytes = context.resources.openRawResource(R.font.nanum_myeongjo_regular)
+        val fontBytes = context.resources.openRawResource(packagedFont.first)
         return WebResourceResponse(
-            "font/ttf", null, 200, "OK",
+            packagedFont.second, null, 200, "OK",
             mapOf("Access-Control-Allow-Origin" to "*"),
             fontBytes
         )
@@ -136,7 +142,8 @@ internal fun applyReaderFallbackStyle(view: TextView, colors: ColorScheme, fontS
     view.setTextColor(colors.onSurface.toArgb())
     view.setBackgroundColor(colors.surface.toArgb())
     view.setLinkTextColor(colors.primary.toArgb())
-    view.typeface = Typeface.create("sans-serif", Typeface.NORMAL)
+    view.typeface = ResourcesCompat.getFont(view.context, R.font.pretendard_variable)
+        ?: Typeface.create("sans-serif", Typeface.NORMAL)
     view.includeFontPadding = false
     view.setTextSize(TypedValue.COMPLEX_UNIT_PX, AxReaderStyle.bodyFontSize * scaledDensity)
     TextViewCompat.setLineHeight(view, (AxReaderStyle.bodyLineHeight * scaledDensity).roundToInt())

@@ -3,7 +3,9 @@ package net.msalt.axnotes.ui
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ColorScheme
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import net.msalt.axnotes.R
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -37,13 +39,39 @@ class AxDesignSystemTest {
             assertTrue("$name must not be smaller than 11sp", style.fontSize.value >= 11f)
             assertTrue("$name requires at least 1.2x leading", style.lineHeight.value >= style.fontSize.value * 1.2f)
             val editorial = name.startsWith("display") || name.startsWith("headline") || name == "titleLarge"
-            assertEquals("$name uses its explicit editorial or control family", if (editorial) AxEditorialFont else FontFamily.SansSerif, style.fontFamily)
+            assertEquals("$name uses its explicit editorial or control family", if (editorial) AxEditorialFont else AxUiFont, style.fontFamily)
         }
-        assertEquals(16.sp, AxTypography.bodyLarge.fontSize)
-        assertEquals(24.sp, AxTypography.bodyLarge.lineHeight)
-        assertEquals(14.sp, AxTypography.labelLarge.fontSize)
-        assertEquals(20.sp, AxTypography.labelLarge.lineHeight)
-        assertEquals(FontWeight.Normal, AxTypography.titleLarge.fontWeight)
+        assertEquals(17.sp, AxTypography.bodyLarge.fontSize)
+        assertEquals(26.sp, AxTypography.bodyLarge.lineHeight)
+        assertEquals(16.sp, AxTypography.labelLarge.fontSize)
+        assertEquals(24.sp, AxTypography.labelLarge.lineHeight)
+        assertEquals(16.sp, AxTypography.bodyMedium.fontSize)
+        assertEquals(24.sp, AxTypography.bodyMedium.lineHeight)
+        assertEquals(14.sp, AxTypography.bodySmall.fontSize)
+        assertEquals(20.sp, AxTypography.bodySmall.lineHeight)
+        assertEquals(14.sp, AxTypography.labelMedium.fontSize)
+        assertEquals(20.sp, AxTypography.labelMedium.lineHeight)
+        assertEquals(12.sp, AxTypography.labelSmall.fontSize)
+        assertEquals(18.sp, AxTypography.labelSmall.lineHeight)
+        assertEquals(28.sp, AxTypography.titleMedium.lineHeight)
+        assertEquals(FontWeight.SemiBold, AxTypography.titleLarge.fontWeight)
+    }
+
+    @Test
+    fun typographyUsesTheWebsiteFamiliesAndRealBundledWeights() {
+        assertEquals(FontFamily(Font(R.font.noto_serif_kr_semibold, FontWeight.SemiBold)), AxEditorialFont)
+        assertEquals(FontFamily(
+            Font(R.font.ibm_plex_sans_kr_regular, FontWeight.Normal),
+            Font(R.font.ibm_plex_sans_kr_medium, FontWeight.Medium),
+            Font(R.font.ibm_plex_sans_kr_semibold, FontWeight.SemiBold)
+        ), AxUiFont)
+        with(AxTypography) {
+            listOf(displayLarge, displayMedium, displaySmall, headlineLarge, headlineMedium, headlineSmall, titleLarge)
+                .forEach { style ->
+                    assertEquals(AxEditorialFont, style.fontFamily)
+                    assertEquals("Editorial titles must select the actual600 face", FontWeight.SemiBold, style.fontWeight)
+                }
+        }
     }
 
     @Test
@@ -70,10 +98,10 @@ class AxDesignSystemTest {
     fun editorialHierarchyUsesBundledSerifWithoutShrinkingControls() {
         assertEquals(30.sp, AxTypography.headlineMedium.fontSize)
         assertEquals(40.sp, AxTypography.headlineMedium.lineHeight)
-        assertEquals(16.sp, AxTypography.titleMedium.fontSize)
-        assertEquals(FontFamily.SansSerif, AxTypography.titleMedium.fontFamily)
-        assertEquals(FontFamily.SansSerif, AxTypography.bodyLarge.fontFamily)
-        assertEquals(FontFamily.SansSerif, AxTypography.labelLarge.fontFamily)
+        assertEquals(18.sp, AxTypography.titleMedium.fontSize)
+        assertEquals(AxUiFont, AxTypography.titleMedium.fontFamily)
+        assertEquals(AxUiFont, AxTypography.bodyLarge.fontFamily)
+        assertEquals(AxUiFont, AxTypography.labelLarge.fontFamily)
         assertEquals(0.dp, AxSize.cardRadius)
         assertTrue(listOf(AxSize.buttonRadius, AxSize.filterRadius, AxSize.inputRadius, AxSize.dialogRadius).all { it <= 8.dp })
         assertEquals(24.dp, AxComponentTokens.pageMargin)

@@ -388,6 +388,13 @@
           "unit": "dp"
         }
       },
+      "dialogMaxWidth": {
+        "$type": "dimension",
+        "$value": {
+          "value": 560.0,
+          "unit": "dp"
+        }
+      },
       "inputRadius": {
         "$type": "dimension",
         "$value": {
@@ -536,8 +543,8 @@
     "displayLarge": {
       "$type": "typography",
       "$value": {
-        "fontFamily": "Nanum Myeongjo",
-        "fontWeight": 400,
+        "fontFamily": "Noto Serif KR",
+        "fontWeight": 600,
         "fontSize": {
           "value": 40.0,
           "unit": "sp"
@@ -555,8 +562,8 @@
     "displayMedium": {
       "$type": "typography",
       "$value": {
-        "fontFamily": "Nanum Myeongjo",
-        "fontWeight": 400,
+        "fontFamily": "Noto Serif KR",
+        "fontWeight": 600,
         "fontSize": {
           "value": 36.0,
           "unit": "sp"
@@ -574,8 +581,8 @@
     "displaySmall": {
       "$type": "typography",
       "$value": {
-        "fontFamily": "Nanum Myeongjo",
-        "fontWeight": 400,
+        "fontFamily": "Noto Serif KR",
+        "fontWeight": 600,
         "fontSize": {
           "value": 32.0,
           "unit": "sp"
@@ -593,8 +600,8 @@
     "headlineLarge": {
       "$type": "typography",
       "$value": {
-        "fontFamily": "Nanum Myeongjo",
-        "fontWeight": 400,
+        "fontFamily": "Noto Serif KR",
+        "fontWeight": 600,
         "fontSize": {
           "value": 32.0,
           "unit": "sp"
@@ -612,8 +619,8 @@
     "headlineMedium": {
       "$type": "typography",
       "$value": {
-        "fontFamily": "Nanum Myeongjo",
-        "fontWeight": 400,
+        "fontFamily": "Noto Serif KR",
+        "fontWeight": 600,
         "fontSize": {
           "value": 30.0,
           "unit": "sp"
@@ -631,8 +638,8 @@
     "headlineSmall": {
       "$type": "typography",
       "$value": {
-        "fontFamily": "Nanum Myeongjo",
-        "fontWeight": 400,
+        "fontFamily": "Noto Serif KR",
+        "fontWeight": 600,
         "fontSize": {
           "value": 26.0,
           "unit": "sp"
@@ -650,8 +657,8 @@
     "titleLarge": {
       "$type": "typography",
       "$value": {
-        "fontFamily": "Nanum Myeongjo",
-        "fontWeight": 400,
+        "fontFamily": "Noto Serif KR",
+        "fontWeight": 600,
         "fontSize": {
           "value": 24.0,
           "unit": "sp"
@@ -669,14 +676,14 @@
     "titleMedium": {
       "$type": "typography",
       "$value": {
-        "fontFamily": "sans-serif",
+        "fontFamily": "IBM Plex Sans KR",
         "fontWeight": 600,
         "fontSize": {
-          "value": 16.0,
+          "value": 18.0,
           "unit": "sp"
         },
         "lineHeight": {
-          "value": 24.0,
+          "value": 28.0,
           "unit": "sp"
         },
         "letterSpacing": {
@@ -688,14 +695,14 @@
     "titleSmall": {
       "$type": "typography",
       "$value": {
-        "fontFamily": "sans-serif",
+        "fontFamily": "IBM Plex Sans KR",
         "fontWeight": 600,
         "fontSize": {
-          "value": 14.0,
+          "value": 16.0,
           "unit": "sp"
         },
         "lineHeight": {
-          "value": 20.0,
+          "value": 24.0,
           "unit": "sp"
         },
         "letterSpacing": {
@@ -707,7 +714,26 @@
     "bodyLarge": {
       "$type": "typography",
       "$value": {
-        "fontFamily": "sans-serif",
+        "fontFamily": "IBM Plex Sans KR",
+        "fontWeight": 400,
+        "fontSize": {
+          "value": 17.0,
+          "unit": "sp"
+        },
+        "lineHeight": {
+          "value": 26.0,
+          "unit": "sp"
+        },
+        "letterSpacing": {
+          "value": 0.0,
+          "unit": "sp"
+        }
+      }
+    },
+    "bodyMedium": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "IBM Plex Sans KR",
         "fontWeight": 400,
         "fontSize": {
           "value": 16.0,
@@ -723,10 +749,10 @@
         }
       }
     },
-    "bodyMedium": {
+    "bodySmall": {
       "$type": "typography",
       "$value": {
-        "fontFamily": "sans-serif",
+        "fontFamily": "IBM Plex Sans KR",
         "fontWeight": 400,
         "fontSize": {
           "value": 14.0,
@@ -734,25 +760,6 @@
         },
         "lineHeight": {
           "value": 20.0,
-          "unit": "sp"
-        },
-        "letterSpacing": {
-          "value": 0.0,
-          "unit": "sp"
-        }
-      }
-    },
-    "bodySmall": {
-      "$type": "typography",
-      "$value": {
-        "fontFamily": "sans-serif",
-        "fontWeight": 400,
-        "fontSize": {
-          "value": 12.0,
-          "unit": "sp"
-        },
-        "lineHeight": {
-          "value": 16.0,
           "unit": "sp"
         },
         "letterSpacing": {
@@ -764,7 +771,26 @@
     "labelLarge": {
       "$type": "typography",
       "$value": {
-        "fontFamily": "sans-serif",
+        "fontFamily": "IBM Plex Sans KR",
+        "fontWeight": 500,
+        "fontSize": {
+          "value": 16.0,
+          "unit": "sp"
+        },
+        "lineHeight": {
+          "value": 24.0,
+          "unit": "sp"
+        },
+        "letterSpacing": {
+          "value": 0.0,
+          "unit": "sp"
+        }
+      }
+    },
+    "labelMedium": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "IBM Plex Sans KR",
         "fontWeight": 500,
         "fontSize": {
           "value": 14.0,
@@ -780,36 +806,17 @@
         }
       }
     },
-    "labelMedium": {
+    "labelSmall": {
       "$type": "typography",
       "$value": {
-        "fontFamily": "sans-serif",
+        "fontFamily": "IBM Plex Sans KR",
         "fontWeight": 500,
         "fontSize": {
           "value": 12.0,
           "unit": "sp"
         },
         "lineHeight": {
-          "value": 16.0,
-          "unit": "sp"
-        },
-        "letterSpacing": {
-          "value": 0.0,
-          "unit": "sp"
-        }
-      }
-    },
-    "labelSmall": {
-      "$type": "typography",
-      "$value": {
-        "fontFamily": "sans-serif",
-        "fontWeight": 500,
-        "fontSize": {
-          "value": 11.0,
-          "unit": "sp"
-        },
-        "lineHeight": {
-          "value": 16.0,
+          "value": 18.0,
           "unit": "sp"
         },
         "letterSpacing": {
@@ -920,7 +927,7 @@
       "$type": "number",
       "$value": 4
     },
-    "$description": "Font sizes/line heights: CSS px or native sp. Layout: CSS px or native dp. horizontalPaddingViewportPercent is a percentage. See AxReaderStyle.kt."
+    "$description": "Offline reader fonts: Noto Serif KR 600 headings, Pretendard Variable body, IBM Plex Sans KR metadata. Font sizes/line heights: CSS px or native sp. Layout: CSS px or native dp. horizontalPaddingViewportPercent is a percentage. See AxReaderStyle.kt."
   },
   "semantic": {
     "light": {

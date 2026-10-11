@@ -16,6 +16,13 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import net.msalt.axnotes.R
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
@@ -176,5 +183,38 @@ internal fun AxEmptyState(title: String, subtitle: String, modifier: Modifier = 
     Column(modifier.padding(vertical = AxComponentTokens.sectionGap), verticalArrangement = Arrangement.spacedBy(AxSpacing.sm)) {
         Text(title, style = MaterialTheme.typography.titleMedium)
         Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+/** One masthead, reused on the journal and every reading/root destination. */
+@Composable
+internal fun AxMasthead(compact: Boolean = false) {
+    Row(Modifier.testTag("ax_masthead").clearAndSetSemantics { contentDescription = "AX Notes" },
+        verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(AxSpacing.sm)) {
+        Icon(painterResource(R.drawable.ax_brand_mark), contentDescription = null,
+            modifier = Modifier.width(50.dp).height(32.dp), tint = MaterialTheme.colorScheme.onSurface)
+        if (!compact) Text("NOTES", style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+@Composable
+internal fun AxPageHeading(title: String, description: String, eyebrow: String? = null) {
+    Column(Modifier.fillMaxWidth().testTag("page_heading"), verticalArrangement = Arrangement.spacedBy(AxSpacing.sm)) {
+        if (eyebrow != null) Text(eyebrow, style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(title, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.semantics { heading() })
+        Text(description, style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+@Composable
+internal fun AxSettingsSection(title: String, content: @Composable ColumnScope.() -> Unit) {
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(AxSpacing.md)) {
+        HorizontalDivider()
+        Spacer(Modifier.height(AxSpacing.xs))
+        Text(title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.semantics { heading() })
+        content()
     }
 }

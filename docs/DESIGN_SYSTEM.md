@@ -42,29 +42,31 @@ Regenerate with `python scripts/export-design-tokens.py`; verify with `python sc
 
 Unselected content rows use the page surface, with no elevation or enclosing rounded border. Selection adds both a tint and a 3dp leading rule with selected semantics. Important state is not conveyed through color alone. Warnings/errors retain paired accessible foreground/background roles and explicit text. The remaining complete role definitions live in Kotlin and the generated JSON. Wallpaper-derived dynamic colors are intentionally disabled.
 
-## Typography and bundled font
+## Typography and bundled website fonts
 
 | Use | Family | Size / leading |
 | --- | --- | --- |
-| Journal heading | Nanum Myeongjo Regular | 30sp / 40sp |
-| Screen title | Nanum Myeongjo Regular | 24sp / 34sp |
-| Article index title | System sans, semibold | 16sp / 24sp |
-| Body / controls | System sans | 16/24, 14/20, 12/16 |
-| Reader title | Nanum Myeongjo Regular | 32 / 44 |
-| Reader body | System sans | 18 / 30 |
-| Reader h2 | Nanum Myeongjo Regular | 24 / 34 |
-| Reader pullquote | Nanum Myeongjo Regular | 22 / 34 |
+| Journal heading | Noto Serif KR 600 | 30sp / 40sp |
+| Root-page title | Noto Serif KR 600 | 30sp / 40sp |
+| Detail title | Noto Serif KR 600 | 24sp / 34sp |
+| Article index / section title | IBM Plex Sans KR 600 | 18sp / 28sp |
+| Input / primary body | IBM Plex Sans KR | 17sp / 26sp |
+| List excerpt / controls | IBM Plex Sans KR | 16sp / 24sp |
+| Supporting metadata | IBM Plex Sans KR | 14sp / 20sp |
+| Reader title | Noto Serif KR 600 | 32 / 44 |
+| Reader body | Pretendard Variable | 18 / 30 |
+| Reader h2 | Noto Serif KR 600 | 24 / 34 |
+| Reader pullquote | Noto Serif KR 600 | 22 / 34 |
 
 Compose uses scalable `sp`; WebView type uses CSS pixels with unitless leading and system text zoom. Layout uses `dp` and CSS pixels respectively. Article rows use compact sans titles like the concept; the journal and reading headlines supply its serif identity. No font-size shrink-to-fit is used. Bounded list excerpts still lead to full article content.
 
-Korean serif appearance must not depend on a device's generic serif fallback. The app bundles the **unmodified Nanum Myeongjo Regular** font from the [official Google Fonts repository](https://github.com/google/fonts/tree/main/ofl/nanummyeongjo), copyright 2010 NHN Corporation, under SIL Open Font License 1.1. The original font contains all 11,172 modern Hangul syllables. No glyph subset, outline modification or renamed font family was produced.
+The owner requested the same font roles, copy and AX favicon style as [ax.msalt.net](https://ax.msalt.net/). Headings use the original official regional **Noto Serif KR SemiBold** resource, controls use **IBM Plex Sans KR 400/500/600**, and article prose uses **Pretendard Variable**. The app retains its larger 18sp reader body, comfortable native tracking, approved paper/ink palette, and scalable controls rather than copying desktop CSS dimensions.
 
-- File: `app/src/main/res/font/nanum_myeongjo_regular.ttf`
-- SHA-256: `7ed9e8653a8ed04285d51dc343ffea6eb3d9c73afc27383ea8929ee4ffd03205`
-- Original copyright and license: [packaged OFL text](../app/src/main/assets/licenses/NanumMyeongjo-OFL.txt)
-- Users can read the full license offline in Settings → 글꼴 라이선스.
+All fonts are bundled offline, unmodified, with original OFL notices and copyright metadata. The official Noto Korean regional subset is 7.6 MB versus the 23.8 MB full variable file; it preserves all modern Hangul syllables and extensive Jamo/Hanja. No custom text-only subset was made. Every bundled font covers all 11,172 modern Hangul syllables; system fallback remains available for unsupported Hanja, archaic/decomposed Jamo and emoji. Sources, hashes and exact coverage are documented in [FONT_ASSETS.md](FONT_ASSETS.md). Settings → 글꼴 라이선스 exposes all three notices offline.
 
-Compose and the native fallback resolve that resource directly. The WebView serves the same bytes only for an exact synthetic HTTPS font URL. That URL never reaches the network. CSP permits only that font endpoint; unknown paths, query variants and non-GET requests on the synthetic host are blocked. File/content access, JavaScript and mixed content remain disabled. Public HTTPS article images retain the existing network behavior. No extra font-service request, dependency or user-data transmission is introduced.
+Compose and the native fallback resolve resources directly. WebView serves exactly three packaged font GET subresources (editorial OTF, body TTF, metadata TTF); those URLs never reach the network. CSP permits only those explicit URLs. Unknown paths, query/fragment variants, main-frame requests and non-GET requests on the synthetic host remain blocked. File/content access, JavaScript and mixed content remain disabled. No font-service request, dependency or user-data transmission is introduced.
+
+The shared masthead and compact rail use the same overlapping serif AX path as the website's favicon, with a single accessible “AX Notes” label. Home uses the website heading “일이 달라지는 순간을 기록합니다.” and short description “악소리 나는 AX 경험담.”. The launcher separates a full-bleed #191915 background and cream #f3f0e7 mark, and provides glyph-only Android 13 monochrome geometry. Its centered foreground fits inside the 66dp circular safe zone of the 108dp adaptive canvas. Launcher masks are owned by Android; no mask or shadow is baked into the foreground.
 
 ## Rhythm, controls and navigation
 
@@ -72,7 +74,7 @@ Compose and the native fallback resolve that resource directly. The WebView serv
 - Article rows have 16dp vertical space, a small ordinal gutter, title, excerpt and factual publisher/date/cache/bookmark metadata.
 - Rows have square corners. Buttons/inputs/filters use 4dp, dialogs 8dp. No content shadow or repeated filled-card grid.
 - Thin section rules and 48dp-minimum underlined tabs replace large classification pills. Both Notes and Library expose a selectable group.
-- Phone navigation is still a 56dp icon-only content bar plus system inset. Notes, Library, Search and Settings now share it; each has a spoken label, tab role and 48dp-minimum target. Selection is a small ink dot. Search also has a useful journal-page shortcut.
+- Phone navigation is still a 56dp icon-only content bar plus system inset. Notes, Library, Search and Settings now share it; each has a spoken label, tab role and 48dp-minimum target. Selection uses a filled action-color tile with a contrasting icon; unselected icons remain on the paper surface. The selected semantic state remains available to assistive technology. The same bar remains visible on Search and Settings. Search also has a useful journal-page shortcut.
 - Tablet rail is 72dp, or 88dp at 150%+ text, with a masthead and named icon destinations. It remains scrollable in short windows.
 - Save, loading, disabled, destructive, warning and input-error states keep native Material behavior and explicit messages. A visually quiet control is still a full-size touch target.
 
@@ -80,7 +82,7 @@ Compose and the native fallback resolve that resource directly. The WebView serv
 
 The header shows a real publisher-provided collection title when available, otherwise AX NOTES, followed by title and publication date. Headings, pullquotes and metadata rules establish the long-form rhythm. Code blocks and tables scroll horizontally; images fit the reading column. No arbitrary reading time, completion percentage, streak or “continue reading” claim is fabricated from the conceptual illustration.
 
-Bookmark, memo, reminder and share actions remain available. The lower reader margin exposes cached-body information, the actual linked-memo count and a direct “메모 남기기” action. Direct entry uses the existing editor, save return and dirty-draft protection. Cached body status is not a bookmark or completed-reading state.
+Bookmark, memo, reminder and share actions remain available. The lower reader margin is the single place for memo controls: the actual linked-memo count and a direct “메모 남기기” action. The duplicate top memo control and always-present cached-body badge were removed after device feedback. Direct entry uses the existing editor, save return and dirty-draft protection. The article-list cache icon describes offline availability, independently of bookmarks. Settings → 오프라인 읽기 안내 explains automatic caching and uncached title/summary-only entries. A rendered reader body has already been cached; no extra saved-state badge is needed.
 
 The outer reader is capped at 880dp. HTML is centered in a 764 CSS-pixel border-box column with responsive 18–32px horizontal padding; native fallback matches the column policy. Body/title colors update when an existing view changes theme. Native text remains selectable, and fallback title styling responds to font scale.
 
@@ -98,3 +100,17 @@ The outer reader is capped at 880dp. HTML is centered in a 764 CSS-pixel border-
 Tests cover semantic contrast, explicit type families and sizes, shapes, token drift, component selection/action states, 200% Korean layout, navigation/collections, direct margin-note save/discard behavior, reader metadata escaping, font request boundaries, fallback scaling/theme updates and existing data/adaptive flows.
 
 Run `./gradlew testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest compileReleaseKotlin`, the token drift check and the Python export tests. Exact results and screenshot coverage belong in [RELEASE_0.3.0.md](RELEASE_0.3.0.md). A compiled preview or instrumentation APK is not evidence of device execution; software-emulator evidence is not a physical-device/TalkBack certification.
+
+## PR 8 device-feedback refinement (2026-10-11 UTC)
+
+Owner feedback: https://github.com/msaltnet/ax-notes/pull/8#issuecomment-6105732055.
+
+- `AxMasthead` is reused across the journal, reader and root destinations. Library, Search and Settings share the same `AxPageHeading` title/description rhythm. Root navigation is always available; detail screens retain Back and draft protection.
+- Settings uses separate, spaced sections with 18sp semibold headings, 16sp body text, 14sp supporting text, and distinct outlined actions. The duplicate AX Notes title was removed. Data deletion confirmations and all warnings remain intact.
+- `AxReminderDialog` stays in the app's light/dark theme. Full-width date/time selectors show their selected values, followed by an explicit combined summary. Filled 예약 and outlined 취소 actions are distinct. Applying a date/time only updates the draft; final reservation keeps the existing notification-permission and scheduler flow.
+- Date selection converts Material's UTC calendar date back into the user's local date without changing the chosen local clock time. Time input uses separate scalable 24-hour fields, numeric validation, and no shrink-to-fit. Dismiss/Cancel does not apply a picker draft. Past-time validation remains inside the dialog.
+- Database schemas, package/version, personal records, notification behavior, external links and release scope are unchanged by this refinement.
+
+### Keyboard-safe reminder pickers
+
+Both date and numeric-time dialogs use non-floating inset-aware windows. DatePickerDialog also explicitly fills its outer window before Material applies its internal wrap-content centering; this is necessary for real API-26 IME insets even when adjustResize is already requested. System bars and the IME reduce the available content area; the body can scroll while Cancel/Apply remain reachable. This fixes a real API 26 software-emulator finding where the previous floating time window panned a 200% dialog beneath the numeric keyboard. The [DialogProperties contract](https://developer.android.com/reference/kotlin/androidx/compose/ui/window/DialogProperties) sets resize behavior on API 30 and below and inset handling on newer versions.

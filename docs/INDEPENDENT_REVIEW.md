@@ -1,5 +1,7 @@
 # Independent MVP source review
 
+Current candidate: the final 2026-10-11 owner-feedback, website-brand and keyboard-inset follow-up. Read the final sections for its source and native-pixel review. Older candidate-specific counts and APK identities below are historical.
+
 Reviewed 2026-10-07 against PRD, TRD and IMPLEMENTATION_PLAN; final-change reread at 11:17 UTC. Scope: Android app/data/UI/reminder sources, manifest, backup rules, build configuration and current tests. This is a source review with focused checks and inspection of the implementation team's runtime evidence, **not complete app verification**. No remote changes or publication were performed.
 
 ## Fixes re-read and verified in source
@@ -89,3 +91,35 @@ Implementation artifacts independently inspected, not rerun by the reviewer:
 The reviewer inspected the final light-phone, dark-reader, 200%-text and tablet split screenshots and the pulled-back installed-APK hash. These captures pass visual review: the serif/sans hierarchy, thin rules, toolbar/footer and compact navigation render without overlay, overlap or unintended clipping. Large-text metadata wraps; rows below the viewport remain scrollable. The dark article is rendered by the actual WebView, not a preview. Content was explicitly imported from the current public snapshot because emulator DNS failed; this is cached-content visual evidence only.
 
 Visual evidence and remaining runtime limits are recorded in [RELEASE_0.3.0.md](RELEASE_0.3.0.md). Automated, source and software-emulator visual review are not physical-device or TalkBack certification.
+
+## PR 8 owner-feedback follow-up (2026-10-11 UTC)
+
+The follow-up production diff was independently reviewed against `60ab79ba348afe1c885fe158283d1500e67afe70`.
+
+- No blocking navigation, draft, persistence, scheduling, permission, WebView security or deletion-confirmation regression was found.
+- Shared mastheads/headings, scalable typography, filled selected navigation, settings sections and the single reader memo area address the owner's eight UI comments.
+- Reminder date conversion preserves the local calendar day and clock time when moving between Material's UTC date representation and local reminders. Picker edits remain staged until Apply; cancel does not apply them. Past-time validation remains in the reminder dialog.
+- A single saveable picker mode ensures only one reminder dialog is rendered at a time. The main dialog preserves its scroll position when a picker closes. Date selection removes the default single-line headline; current selection is shown in the full main-dialog summary. Both long explanations and picker content can scroll.
+- A native-graphics 200% test initially reported `TextLayoutResult.hasVisualOverflow` for a wrap-content date label whose actual glyphs all fit. The strengthened test checks real line bounds, complete visible text, scaled density and height overflow, matching the existing masthead test contract.
+
+Focused diagnostics isolated a numeric-input dialog width oscillation (272↔363px) in the test runtime. The numeric dialog now uses the same no-platform-width-negotiation policy as Material DatePickerDialog, with responsive width bounds and 24dp margins. Both direct and shared input fixtures passed with stable widths; no dependency upgrade or custom dialog shell was needed.
+
+This source review is distinct from execution. Final automated results and actual-emulator evidence are recorded in the release notes; it is not a TalkBack or physical-device certification.
+
+## Website-brand and keyboard-inset review — 2026-10-11 UTC
+
+Independent source review found no blocking change in the offline Noto Serif KR/IBM Plex Sans KR/Pretendard integration, exact three-URL reader allowlist, shared AX vector masthead, adaptive/monochrome icon or existing data/navigation boundaries. The reviewer independently verified all five original font files' modern-Hangul coverage, weights, hashes and notices, and compared the two AX path strings and safe-zone bounds against the website source.
+
+The real API 26 keyboard-visible capture of the intermediate build revealed clipped actions at 200% text. Both pickers now opt into non-floating, inset-aware windows with IME/system-bar padding and scrollable content. The pinned Compose UI 1.8.0 implementation was inspected: this policy requests ADJUST_RESIZE below API 31 and ADJUST_NOTHING with explicit insets on newer versions. The new API 26 regression waits until the picker composition is displayed before checking that exact window; observing the previously dismissed dialog caused an initial stale-window test failure. Full execution and final image evidence are recorded separately in the release notes.
+
+The first branding aggregate, before the date-window-height refinement, was independently inspected: 143 tests in 19 suites with zero failures/errors/skips, successful build/lint/release Kotlin tasks, and the 24,463,735-byte APK SHA-256 `0c2eb23007a5265f8456b433d5bee1466aace11de9d4c46e75a4df11e6259efb`. All eight selected native images were opened directly; no blocking overlap, clipping or mask-induced glyph loss was found. The brand captures precede only the final AxReminderDialog.kt height refinement; the other 56 captured source/resource hashes still match. The two additional lint advisories were checked against the manifest and API-33 override: icon and roundIcon resolve to the same resource, which supplies the monochrome layer on API 33+. They do not indicate a missing themed-icon implementation.
+
+The final date-input keyboard check exposed a second, component-specific issue: Material3 1.3.2 DatePickerDialog appends wrapContentHeight to its caller modifier. The real API-26 date window remained FILL×WRAP while the numeric window was FILL×FILL; both already requested resize. The smallest corrective change prepends fillMaxHeight before the date window's inset modifiers. Material's existing wrapped Surface, weighted scrollable body and action row are retained. The API-26 regression now also asserts the date window is MATCH_PARENT. This finding and retest are separate from the earlier successful numeric-keyboard screenshot.
+
+
+The final post-fix aggregate was independently checked from its logs/XML: 143 tests in 19 suites with no failures, errors or skips; lint has zero errors and 11 advisories, and debug/instrumentation assembly plus release Kotlin compilation succeeded. Both the built and pulled installed final APK were independently hashed to `df867b96d360ed4fe58f9b7e7a1608d8b0148d65501a5c4dc6b03be90bcb54c5`. At 07:22 UTC the reviewer opened the final real date-input screenshots with the keyboard shown and hidden at 200% text. The complete date and both actions fit, with the action row above the actual IME. No blocking source, security or reviewed-pixel finding remains. The original numeric controls and actual launcher had also passed on the preceding candidate; these results are explicitly separated by APK identity in the evidence record.
+
+The `.gitattributes` license exception was independently verified to preserve every original OFL notice byte-for-byte, including IBM's upstream CRLF endings. It changes Git text treatment only; no packaged license bytes or production code changed after the aggregate.
+
+
+At 07:24 UTC the reviewer additionally opened the final APK's numeric-input keyboard-visible frame. Both hour/minute labels and values, Cancel and Apply are fully visible above the real keyboard, without clipping. Both picker IME gates now pass on the exact final `df867b96…` APK. The actual launcher capture still belongs to the preceding candidate and its unchanged resource bytes.

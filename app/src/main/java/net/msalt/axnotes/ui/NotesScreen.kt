@@ -32,13 +32,9 @@ internal fun NotesScreen(
 ) {
     NotesRefreshBox(isRefreshing = busy, onRefresh = onRefresh) {
         LazyColumn(state = scrollState, modifier = Modifier.fillMaxSize().testTag("notes_list"),
-            contentPadding = PaddingValues(horizontal = AxComponentTokens.pageMargin, vertical = AxSpacing.xl)) {
+            contentPadding = PaddingValues(horizontal = AxComponentTokens.pageMargin, vertical = AxComponentTokens.pageMargin)) {
             item {
-                Text("EXPERIMENTS & IDEAS", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Spacer(Modifier.height(AxSpacing.md))
-                Text("실험을 읽는 시간", style = MaterialTheme.typography.headlineMedium)
-                Spacer(Modifier.height(AxSpacing.sm))
-                Text("AX 실험과 개발 기록, 나의 메모로 이어 읽기", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                AxPageHeading("일이 달라지는 순간을 기록합니다.", "악소리 나는 AX 경험담.", "EXPERIMENTS & IDEAS")
                 Spacer(Modifier.height(AxSpacing.lg))
                 Row(Modifier.fillMaxWidth().heightIn(min = AxSize.minTouch)
                     .clickable(role = Role.Button, onClick = onSearch).testTag("notes_search")

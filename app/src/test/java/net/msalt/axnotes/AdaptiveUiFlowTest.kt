@@ -55,7 +55,7 @@ class AdaptiveUiFlowTest {
     private fun openEditor() {
         waitForNotes()
         compose.onNodeWithText(articleTitle).performClick()
-        compose.onNodeWithText("메모").performClick()
+        compose.onNodeWithText("메모 0").performScrollTo().performClick()
         compose.onNodeWithText("새 메모").performClick()
         compose.onNodeWithText("기억할 생각이나 적용할 아이디어").performTextInput("태블릿에서도 지킬 생각")
     }
@@ -105,7 +105,7 @@ class AdaptiveUiFlowTest {
         compose.onNodeWithText("계속 작성").performClick()
         compose.onNodeWithTag("nav_library").performClick()
         compose.onNodeWithText("변경 버리고 나가기").performClick()
-        compose.onNodeWithText("나만의 읽기 공간").assertExists()
+        compose.onNodeWithText("내 보관함").assertExists()
         compose.onNodeWithTag("memo_editor").assertDoesNotExist()
     }
 
@@ -159,7 +159,7 @@ class AdaptiveUiFlowTest {
         waitForNotes()
         compose.onNodeWithTag("notes_list").performScrollToNode(hasText(articleTitle))
         compose.onNodeWithText(articleTitle).performClick()
-        compose.onNodeWithText("메모").performClick()
+        compose.onNodeWithText("메모 0").performScrollTo().performClick()
         compose.onNodeWithText("새 메모").performClick()
         compose.onNodeWithText("기억할 생각이나 적용할 아이디어").performScrollTo().performTextInput("큰 글자 메모")
         compose.onNodeWithText("메모 저장").performScrollTo().assertIsDisplayed()
@@ -176,7 +176,7 @@ class AdaptiveUiFlowTest {
         compose.onNodeWithText("나중에 읽기").assertExists()
         compose.onNodeWithText("취소").performClick()
         compose.onNodeWithTag("reader_pane").assertExists()
-        compose.onNodeWithText("메모").performClick()
+        compose.onNodeWithText("메모 0").performScrollTo().performClick()
         compose.onNodeWithText("새 메모").performClick()
         compose.onNodeWithText("기억할 생각이나 적용할 아이디어").performTextInput("태블릿 검색 검증용 생각")
         compose.onNodeWithText("메모 저장").performScrollTo().performClick()
@@ -187,7 +187,7 @@ class AdaptiveUiFlowTest {
         compose.onNodeWithTag("library_list").assertExists()
         compose.onNodeWithTag("reader_pane").assertExists()
         compose.onNodeWithContentDescription("뒤로").performClick()
-        compose.onNodeWithText("나만의 읽기 공간").assertExists()
+        compose.onNodeWithText("내 보관함").assertExists()
         compose.onNodeWithTag("reader_placeholder").assertExists()
         compose.onNodeWithTag("nav_search").performClick()
         compose.onNodeWithText("글과 메모에서 검색").performTextInput("검색 검증용")

@@ -37,6 +37,7 @@ object AxSize {
     val bottomNavigation = 56.dp
     val cardRadius = 0.dp
     val dialogRadius = 8.dp
+    val dialogMaxWidth = 560.dp
     val inputRadius = 4.dp
     val buttonRadius = 4.dp
     val filterRadius = 4.dp
@@ -126,25 +127,30 @@ internal val AxDarkColors = darkColorScheme(
     onErrorContainer = Color(0xFFF9DEDC)
 )
 
-/** Unmodified SIL OFL font: Korean titles remain serif offline on every supported device. */
-internal val AxEditorialFont = FontFamily(Font(R.font.nanum_myeongjo_regular, FontWeight.Normal))
+/** Unmodified OFL assets match ax.msalt.net and remain available offline. */
+internal val AxEditorialFont = FontFamily(Font(R.font.noto_serif_kr_semibold, FontWeight.SemiBold))
+internal val AxUiFont = FontFamily(
+    Font(R.font.ibm_plex_sans_kr_regular, FontWeight.Normal),
+    Font(R.font.ibm_plex_sans_kr_medium, FontWeight.Medium),
+    Font(R.font.ibm_plex_sans_kr_semibold, FontWeight.SemiBold)
+)
 
 internal val AxTypography = Typography(
-    displayLarge = TextStyle(fontFamily = AxEditorialFont, letterSpacing = 0.sp, fontWeight = FontWeight.Normal, fontSize = 40.sp, lineHeight = 48.sp),
-    displayMedium = TextStyle(fontFamily = AxEditorialFont, letterSpacing = 0.sp, fontWeight = FontWeight.Normal, fontSize = 36.sp, lineHeight = 44.sp),
-    displaySmall = TextStyle(fontFamily = AxEditorialFont, letterSpacing = 0.sp, fontWeight = FontWeight.Normal, fontSize = 32.sp, lineHeight = 40.sp),
-    headlineLarge = TextStyle(fontFamily = AxEditorialFont, letterSpacing = 0.sp, fontWeight = FontWeight.Normal, fontSize = 32.sp, lineHeight = 44.sp),
-    headlineMedium = TextStyle(fontFamily = AxEditorialFont, letterSpacing = 0.sp, fontWeight = FontWeight.Normal, fontSize = 30.sp, lineHeight = 40.sp),
-    headlineSmall = TextStyle(fontFamily = AxEditorialFont, letterSpacing = 0.sp, fontWeight = FontWeight.Normal, fontSize = 26.sp, lineHeight = 36.sp),
-    titleLarge = TextStyle(fontFamily = AxEditorialFont, letterSpacing = 0.sp, fontWeight = FontWeight.Normal, fontSize = 24.sp, lineHeight = 34.sp),
-    titleMedium = TextStyle(fontFamily = FontFamily.SansSerif, letterSpacing = 0.sp, fontWeight = FontWeight.SemiBold, fontSize = 16.sp, lineHeight = 24.sp),
-    titleSmall = TextStyle(fontFamily = FontFamily.SansSerif, letterSpacing = 0.sp, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, lineHeight = 20.sp),
-    bodyLarge = TextStyle(fontFamily = FontFamily.SansSerif, letterSpacing = 0.sp, fontSize = 16.sp, lineHeight = 24.sp),
-    bodyMedium = TextStyle(fontFamily = FontFamily.SansSerif, letterSpacing = 0.sp, fontSize = 14.sp, lineHeight = 20.sp),
-    bodySmall = TextStyle(fontFamily = FontFamily.SansSerif, letterSpacing = 0.sp, fontSize = 12.sp, lineHeight = 16.sp),
-    labelLarge = TextStyle(fontFamily = FontFamily.SansSerif, letterSpacing = 0.sp, fontWeight = FontWeight.Medium, fontSize = 14.sp, lineHeight = 20.sp),
-    labelMedium = TextStyle(fontFamily = FontFamily.SansSerif, letterSpacing = 0.sp, fontWeight = FontWeight.Medium, fontSize = 12.sp, lineHeight = 16.sp),
-    labelSmall = TextStyle(fontFamily = FontFamily.SansSerif, letterSpacing = 0.sp, fontWeight = FontWeight.Medium, fontSize = 11.sp, lineHeight = 16.sp)
+    displayLarge = TextStyle(fontFamily = AxEditorialFont, letterSpacing = 0.sp, fontWeight = FontWeight.SemiBold, fontSize = 40.sp, lineHeight = 48.sp),
+    displayMedium = TextStyle(fontFamily = AxEditorialFont, letterSpacing = 0.sp, fontWeight = FontWeight.SemiBold, fontSize = 36.sp, lineHeight = 44.sp),
+    displaySmall = TextStyle(fontFamily = AxEditorialFont, letterSpacing = 0.sp, fontWeight = FontWeight.SemiBold, fontSize = 32.sp, lineHeight = 40.sp),
+    headlineLarge = TextStyle(fontFamily = AxEditorialFont, letterSpacing = 0.sp, fontWeight = FontWeight.SemiBold, fontSize = 32.sp, lineHeight = 44.sp),
+    headlineMedium = TextStyle(fontFamily = AxEditorialFont, letterSpacing = 0.sp, fontWeight = FontWeight.SemiBold, fontSize = 30.sp, lineHeight = 40.sp),
+    headlineSmall = TextStyle(fontFamily = AxEditorialFont, letterSpacing = 0.sp, fontWeight = FontWeight.SemiBold, fontSize = 26.sp, lineHeight = 36.sp),
+    titleLarge = TextStyle(fontFamily = AxEditorialFont, letterSpacing = 0.sp, fontWeight = FontWeight.SemiBold, fontSize = 24.sp, lineHeight = 34.sp),
+    titleMedium = TextStyle(fontFamily = AxUiFont, letterSpacing = 0.sp, fontWeight = FontWeight.SemiBold, fontSize = 18.sp, lineHeight = 28.sp),
+    titleSmall = TextStyle(fontFamily = AxUiFont, letterSpacing = 0.sp, fontWeight = FontWeight.SemiBold, fontSize = 16.sp, lineHeight = 24.sp),
+    bodyLarge = TextStyle(fontFamily = AxUiFont, letterSpacing = 0.sp, fontSize = 17.sp, lineHeight = 26.sp),
+    bodyMedium = TextStyle(fontFamily = AxUiFont, letterSpacing = 0.sp, fontSize = 16.sp, lineHeight = 24.sp),
+    bodySmall = TextStyle(fontFamily = AxUiFont, letterSpacing = 0.sp, fontSize = 14.sp, lineHeight = 20.sp),
+    labelLarge = TextStyle(fontFamily = AxUiFont, letterSpacing = 0.sp, fontWeight = FontWeight.Medium, fontSize = 16.sp, lineHeight = 24.sp),
+    labelMedium = TextStyle(fontFamily = AxUiFont, letterSpacing = 0.sp, fontWeight = FontWeight.Medium, fontSize = 14.sp, lineHeight = 20.sp),
+    labelSmall = TextStyle(fontFamily = AxUiFont, letterSpacing = 0.sp, fontWeight = FontWeight.Medium, fontSize = 12.sp, lineHeight = 18.sp)
 )
 
 internal val AxShapes = Shapes(

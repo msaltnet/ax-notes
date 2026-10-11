@@ -108,17 +108,39 @@ class FeedbackUiFlowTest {
         compose.onNodeWithContentDescription("내 보관함").performClick()
         compose.onNodeWithTag("nav_library").assertIsSelected()
         compose.onNodeWithTag("nav_notes").assertIsNotSelected()
-        compose.onNodeWithText("나만의 읽기 공간").assertIsDisplayed()
+        compose.onNodeWithText("내 보관함").assertIsDisplayed()
         compose.onNodeWithContentDescription("Notes").performClick()
         compose.onNodeWithTag("nav_notes").assertIsSelected()
         compose.onNodeWithTag("notes_list").assertExists()
     }
 
     @Test
+    fun everyRootUsesTheSameMastheadAndKeepsSearchSettingsAndSelectionAccessible() {
+        waitForInitialFeed()
+        val roots = listOf("notes" to "일이 달라지는 순간을 기록합니다.", "library" to "내 보관함",
+            "search" to "통합 검색", "settings" to "설정 및 소개")
+        roots.forEach { (route, heading) ->
+            compose.onNodeWithTag("nav_$route").performClick()
+            compose.onAllNodesWithTag("ax_masthead").assertCountEquals(1)
+            compose.onNodeWithTag("ax_masthead").assertIsDisplayed()
+            compose.onNodeWithTag("ax_masthead").assertContentDescriptionEquals("AX Notes")
+            compose.onNodeWithText("NOTES", useUnmergedTree = true).assertIsDisplayed()
+            compose.onNodeWithText(heading).assertIsDisplayed()
+            compose.onNodeWithContentDescription("뒤로").assertDoesNotExist()
+            roots.forEach { (destination, _) ->
+                val nav = compose.onNodeWithTag("nav_$destination").assertIsDisplayed().assertHasClickAction()
+                if (destination == route) nav.assertIsSelected() else nav.assertIsNotSelected()
+            }
+            compose.onNodeWithTag("nav_search").assertContentDescriptionEquals("검색")
+            compose.onNodeWithTag("nav_settings").assertContentDescriptionEquals("설정")
+        }
+    }
+
+    @Test
     @org.robolectric.annotation.GraphicsMode(org.robolectric.annotation.GraphicsMode.Mode.NATIVE)
     fun editorialMastheadGrowsAtTwoHundredPercentWithoutClippingOrShrinkingText() {
         val baseline = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
-        compose.onNodeWithText("AX.", useUnmergedTree = true)
+        compose.onNodeWithText("NOTES", useUnmergedTree = true)
             .performSemanticsAction(SemanticsActions.GetTextLayoutResult) { action -> action(baseline) }
         val baselineHeight = baseline.single().size.height
         // Change the actual Android font configuration, including the platform
@@ -128,18 +150,18 @@ class FeedbackUiFlowTest {
         val layouts = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
         compose.waitUntil(5000) {
             layouts.clear()
-            compose.onNodeWithText("AX.", useUnmergedTree = true)
+            compose.onNodeWithText("NOTES", useUnmergedTree = true)
                 .performSemanticsAction(SemanticsActions.GetTextLayoutResult) { action -> action(layouts) }
             layouts.singleOrNull()?.layoutInput?.density?.fontScale == 2f
         }
         val layout = layouts.single()
-        compose.onNodeWithText("AX.", useUnmergedTree = true).assertIsDisplayed()
+        compose.onNodeWithText("NOTES", useUnmergedTree = true).assertIsDisplayed()
         // A single line trims outer leading; compare actual glyph layout growth
         // rather than requiring the nominal inter-line height on its outer bounds.
         assertTrue("System text must enlarge the masthead: ${layout.size.height} <= $baselineHeight", layout.size.height > baselineHeight)
         assertFalse("Editorial masthead must have room for scaled leading", layout.didOverflowHeight)
         assertEquals(1, layout.lineCount)
-        assertEquals(3, layout.getLineEnd(0, visibleEnd = true))
+        assertEquals(5, layout.getLineEnd(0, visibleEnd = true))
         // Text in a wrap-content Row can retain a wider paragraph constraint even
         // when every glyph fits. Check the actual rendered line, not that constraint.
         assertTrue("Every masthead glyph must fit its bounds", layout.getLineRight(0) <= layout.size.width + 1f)
@@ -151,12 +173,13 @@ class FeedbackUiFlowTest {
     @Test
     fun editorialSearchShortcutAndMarginMemoUseExistingProtectedFlows() {
         waitForInitialFeed()
-        compose.onNodeWithText("실험을 읽는 시간").assertIsDisplayed()
+        compose.onNodeWithText("일이 달라지는 순간을 기록합니다.").assertIsDisplayed()
+        compose.onNodeWithText("악소리 나는 AX 경험담.").assertIsDisplayed()
         compose.onNodeWithTag("notes_search").assertHeightIsAtLeast(48.dp).performClick()
         compose.onNodeWithText("글과 메모에서 검색").assertExists()
-        compose.onNodeWithContentDescription("뒤로").performClick()
+        compose.onNodeWithTag("nav_notes").performClick()
         openArticle(sampleTitle)
-        compose.onNodeWithText("연결된 메모 0").performScrollTo().assertHasClickAction()
+        compose.onNodeWithText("메모 0").performScrollTo().assertHasClickAction()
         compose.onNodeWithText("메모 남기기").performScrollTo().performClick()
         compose.onNodeWithTag("memo_editor").assertExists()
         compose.onNodeWithText("기억할 생각이나 적용할 아이디어").performTextInput("편집 디자인에서도 지킬 생각")
@@ -165,7 +188,7 @@ class FeedbackUiFlowTest {
         compose.onNodeWithText("계속 작성").performClick()
         compose.onNodeWithText("메모 저장").performScrollTo().performClick()
         compose.waitUntil(10000) { compose.onAllNodesWithTag("reader_pane").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithText("연결된 메모 1").performScrollTo().performClick()
+        compose.onNodeWithText("메모 1").performScrollTo().performClick()
         compose.onNodeWithText("편집 디자인에서도 지킬 생각").assertExists()
     }
 
@@ -175,11 +198,18 @@ class FeedbackUiFlowTest {
         compose.onNodeWithContentDescription("설정").performClick()
         compose.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("글꼴 라이선스"))
         compose.onNodeWithText("글꼴 라이선스").performClick()
-        compose.onNodeWithText("나눔명조 · SIL OFL 1.1").assertExists()
-        compose.onNodeWithText("Copyright (c) 2010, NHN Corporation", substring = true).assertExists()
+        compose.onNodeWithText("글꼴 · SIL OFL 1.1").assertExists()
+        listOf("Noto Serif KR", "IBM Plex Sans KR", "Pretendard", "SIL OPEN FONT LICENSE").forEach { notice ->
+            compose.onNode(hasText(notice, substring = true) and hasAnyAncestor(isDialog())).assertExists()
+        }
+        listOf("NotoSerifKR-OFL.txt", "IBMPlexSansKR-OFL.txt", "Pretendard-OFL.txt").forEach { file ->
+            val notice = compose.activity.assets.open("licenses/$file").bufferedReader().use { it.readText() }
+            compose.onNode(hasText(notice, substring = true) and hasAnyAncestor(isDialog())).assertExists()
+        }
         compose.onNodeWithText("닫기").performClick()
-        compose.onNodeWithText("나눔명조 · SIL OFL 1.1").assertDoesNotExist()
-        compose.onNodeWithText("설정 및 소개").assertExists()
+        compose.onNodeWithText("글꼴 · SIL OFL 1.1").assertDoesNotExist()
+        compose.onNodeWithTag("settings_list").performScrollToIndex(0)
+        compose.onNodeWithText("설정 및 소개").assertIsDisplayed()
     }
 
     @Test
@@ -256,9 +286,17 @@ class FeedbackUiFlowTest {
     fun readerKeepsBookmarkMemoReminderAndShareWithoutPromotionalActions() {
         seedCollections()
         openArticle(firstTitle)
-        listOf("북마크", "메모", "읽기 알림", "공유").forEach { label ->
+        listOf("북마크", "읽기 알림", "공유").forEach { label ->
             compose.onNodeWithText(label).assertHasClickAction()
         }
+        compose.onNodeWithText("메모").assertDoesNotExist()
+        compose.onAllNodesWithText("메모 0").assertCountEquals(1)
+        compose.onAllNodesWithText("메모 남기기").assertCountEquals(1)
+        listOf("메모 0", "메모 남기기").forEach { label ->
+            compose.onNodeWithText(label).performScrollTo().assertHasClickAction().assertIsDisplayed()
+        }
+        compose.onNodeWithText("본문 저장됨").assertDoesNotExist()
+        compose.onNodeWithTag("ax_masthead").assertIsDisplayed()
         listOf("원문", "원문 보기", "프로젝트", "작성자", authorName).forEach { label ->
             compose.onNodeWithText(label).assertDoesNotExist()
         }
@@ -268,7 +306,7 @@ class FeedbackUiFlowTest {
         compose.waitUntil(10000) {
             compose.onAllNodesWithText("북마크됨").fetchSemanticsNodes().isNotEmpty()
         }
-        compose.onNodeWithText("메모").performClick()
+        compose.onNodeWithText("메모 0").performScrollTo().performClick()
         compose.onNodeWithText("글에 남긴 메모").assertExists()
         compose.onNodeWithContentDescription("뒤로").performClick()
         compose.onNodeWithText("읽기 알림").performScrollTo().performClick()
@@ -292,17 +330,20 @@ class FeedbackUiFlowTest {
     }
 
     @Test
-    fun savedBodyExplanationCanCloseAndReopenWithoutLeavingReader() {
-        seedCollections()
-        openArticle(firstTitle)
+    fun offlineReadingExplanationCanCloseAndReopenWithoutLeavingSettings() {
+        waitForInitialFeed()
+        compose.onNodeWithTag("nav_settings").performClick()
         repeat(2) {
-            compose.onNodeWithText("본문 저장됨").performClick()
-            compose.onNodeWithText("저장된 본문").assertExists()
+            compose.onNodeWithTag("settings_list").performScrollToNode(hasText("오프라인 읽기 안내"))
+            compose.onNodeWithText("오프라인 읽기 안내").assertIsDisplayed().performClick()
+            compose.onNodeWithText("오프라인 읽기").assertIsDisplayed()
             compose.onNodeWithText("인터넷 없이 다시 읽을 수 있어요", substring = true).assertExists()
             compose.onNodeWithText("북마크·메모·읽기 알림은 본문 저장과 별개", substring = true).assertExists()
+            compose.onNodeWithText("이미지와 외부 링크는 인터넷이 필요", substring = true).assertExists()
             compose.onNodeWithText("확인").performClick()
-            compose.onNodeWithText("저장된 본문").assertDoesNotExist()
-            compose.onNodeWithTag("reader_pane").assertExists()
+            compose.onNodeWithText("오프라인 읽기").assertDoesNotExist()
+            compose.onNodeWithTag("settings_list").assertExists()
+            compose.onNodeWithTag("nav_settings").assertIsSelected()
         }
     }
 
@@ -466,8 +507,11 @@ class FeedbackUiFlowTest {
         compose.onNodeWithTag("notes_list").performScrollToNode(hasText(title))
         compose.onNodeWithText(title).performClick()
         compose.waitUntil(10000) {
-            compose.onAllNodesWithText("본문 저장됨").fetchSemanticsNodes().isNotEmpty()
+            compose.onAllNodesWithTag("reader_pane").fetchSemanticsNodes().isNotEmpty() &&
+                compose.onAllNodesWithText("원문을 현재 목록에서 찾을 수 없어요. 저장한 메모와 북마크는 유지됩니다").fetchSemanticsNodes().isEmpty() &&
+                compose.onAllNodesWithText("본문을 아직 받지 못했어요").fetchSemanticsNodes().isEmpty()
         }
+        compose.onNodeWithTag("reader_pane").assertIsDisplayed()
     }
 
     private fun assertArticleOrder(first: String, second: String) {

@@ -31,16 +31,21 @@ class DesignTokenExportTest(unittest.TestCase):
         self.assertNotEqual(json.loads(EXPORTER.export()), result)
 
     def test_font_family_changes_are_exported(self):
-        result = self.mutated_export("AxDesignSystem.kt", "FontFamily.SansSerif", "FontFamily.Serif")
+        result = self.mutated_export("AxDesignSystem.kt", "fontFamily = AxUiFont", "fontFamily = FontFamily.Serif")
         self.assertEqual("serif", result["typography"]["bodyLarge"]["$value"]["fontFamily"])
         self.assertNotEqual(json.loads(EXPORTER.export()), result)
 
     def test_editorial_font_resource_and_body_remain_distinct(self):
         result = json.loads(EXPORTER.export())
-        self.assertEqual("Nanum Myeongjo", result["typography"]["headlineMedium"]["$value"]["fontFamily"])
-        self.assertEqual("sans-serif", result["typography"]["bodyLarge"]["$value"]["fontFamily"])
+        self.assertEqual("Noto Serif KR", result["typography"]["headlineMedium"]["$value"]["fontFamily"])
+        self.assertEqual("IBM Plex Sans KR", result["typography"]["bodyLarge"]["$value"]["fontFamily"])
         with self.assertRaisesRegex(ValueError, "editorial font family"):
-            self.mutated_export("AxDesignSystem.kt", "R.font.nanum_myeongjo_regular", "R.font.unverified")
+            self.mutated_export("AxDesignSystem.kt", "R.font.noto_serif_kr_semibold", "R.font.unverified")
+
+    def test_ui_font_resource_weights_cannot_silently_drift(self):
+        with self.assertRaisesRegex(ValueError, "UI font family"):
+            self.mutated_export("AxDesignSystem.kt", "Font(R.font.ibm_plex_sans_kr_medium, FontWeight.Medium)",
+                                "Font(R.font.ibm_plex_sans_kr_medium, FontWeight.Normal)")
 
     def test_unsupported_letter_spacing_is_rejected(self):
         with self.assertRaisesRegex(ValueError, "letterSpacing"):
@@ -48,7 +53,7 @@ class DesignTokenExportTest(unittest.TestCase):
 
     def test_unsupported_font_family_is_rejected(self):
         with self.assertRaisesRegex(ValueError, "font family"):
-            self.mutated_export("AxDesignSystem.kt", "FontFamily.SansSerif", "FontFamily.Custom")
+            self.mutated_export("AxDesignSystem.kt", "fontFamily = AxUiFont", "fontFamily = FontFamily.Custom")
 
     def test_color_expression_cannot_be_silently_omitted(self):
         with self.assertRaisesRegex(ValueError, "color declaration"):

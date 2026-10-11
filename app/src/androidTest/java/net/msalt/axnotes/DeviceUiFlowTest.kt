@@ -15,7 +15,7 @@ class DeviceUiFlowTest {
         waitForNotes()
         repeat(3) {
             compose.onNodeWithContentDescription("내 보관함").performClick()
-            compose.onNodeWithText("나만의 읽기 공간").assertExists()
+            compose.onNodeWithText("내 보관함").assertExists()
             compose.onNodeWithContentDescription("Notes").performClick()
             compose.onNodeWithText("AX Notes 앱도 만들어볼까?").assertExists()
         }
@@ -23,7 +23,7 @@ class DeviceUiFlowTest {
     @Test fun dirtyMemoBackCanContinueOrDiscard() {
         waitForNotes()
         compose.onNodeWithText("AX Notes 앱도 만들어볼까?").performClick()
-        compose.onNodeWithText("메모").performClick()
+        compose.onNodeWithText("메모 0").performScrollTo().performClick()
         compose.onNodeWithText("새 메모").performClick()
         compose.onNodeWithText("기억할 생각이나 적용할 아이디어").performTextInput("잃으면 안 되는 생각")
         compose.activityRule.scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
