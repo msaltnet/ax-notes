@@ -28,7 +28,11 @@ class FeedSettingsTest {
         settings.edit().putBoolean("sample", true).putString("unrelated", "keep").commit()
         withGraph { assertFalse(it.sampleMode) }
         assertEquals("keep", settings.getString("unrelated", null))
-        assertTrue(settings.getBoolean("liveFeedDefaultV2", false))
+        assertTrue(settings.getBoolean("liveFeedDefaultV3", false))
+    }
+    @Test fun previousV2ExplicitSampleChoiceIsMovedToLiveFeed() {
+        settings.edit().putBoolean("sample", true).putBoolean("liveFeedDefaultV2", true).commit()
+        withGraph { assertFalse(it.sampleMode) }
     }
     @Test fun explicitFixtureChoiceAfterMigrationSurvivesRecreation() {
         withGraph { it.sampleMode = true }

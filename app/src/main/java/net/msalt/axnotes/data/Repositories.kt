@@ -89,8 +89,13 @@ class PersonalRepository(private val content: ContentDao, val db: PersonalDataba
         val old = (id ?: newMemoId)?.let { dao.memo(it) }
         require(id == null || old != null) { "삭제된 메모입니다" }
         require(old == null || old.articleId == articleId) { "메모의 연결 글을 변경할 수 없습니다" }
+        // Keep legacy multiple memos intact, but never create another memo for an article.
+        // The same gate covers lookup and write, including overlapping save requests.
+        require(old != null || dao.memosFor(articleId).isEmpty()) { "이 글에 메모가 이미 있습니다. 기존 메모를 수정하세요" }
         val now = System.currentTimeMillis(); val savedId = old?.id ?: newMemoId ?: UUID.randomUUID().toString()
-        dao.putMemo(Memo(savedId, articleId, snapshotTitle, url, FeedContract.normalize(title.trim()), FeedContract.normalize(body), old?.createdAt ?: now, now))
+        // The title field is no longer displayed; retain stored bytes without a destructive migration.
+        val savedTitle = old?.title ?: FeedContract.normalize(title.trim())
+        dao.putMemo(Memo(savedId, articleId, snapshotTitle, url, savedTitle, FeedContract.normalize(body), old?.createdAt ?: now, now))
         savedId
     }
 }

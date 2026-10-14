@@ -34,12 +34,18 @@ import org.robolectric.annotation.LooperMode
 class AdaptiveUiFlowTest {
     @get:Rule(order = 0) val work = object : ExternalResource() {
         override fun before() {
+            resetViewModelFactoryApplication()
             val context = ApplicationProvider.getApplicationContext<Context>()
             context.getSharedPreferences("settings", Context.MODE_PRIVATE).edit()
-                .putBoolean("sample", true).putBoolean("liveFeedDefaultV2", true).commit()
+                .putBoolean("sample", true).putBoolean("liveFeedDefaultV3", true).commit()
             WorkManagerTestInitHelper.initializeTestWorkManager(context, Configuration.Builder().setExecutor(SynchronousExecutor()).build())
         }
-        override fun after() { WorkManagerTestInitHelper.closeWorkDatabase() }
+        override fun after() { WorkManagerTestInitHelper.closeWorkDatabase(); resetViewModelFactoryApplication() }
+    }
+    private fun resetViewModelFactoryApplication() {
+        // Lifecycle caches an Application, but each Robolectric test owns a new one.
+        androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory::class.java.getDeclaredField("_instance")
+            .apply { isAccessible = true }.set(null, null)
     }
     @get:Rule(order = 1) val compose = createAndroidComposeRule<MainActivity>()
     private val articleTitle = "AX Notes 앱도 만들어볼까?"
@@ -49,8 +55,7 @@ class AdaptiveUiFlowTest {
     private fun openEditor() {
         waitForNotes()
         compose.onNodeWithText(articleTitle).performClick()
-        compose.onNodeWithText("메모").performClick()
-        compose.onNodeWithText("새 메모").performClick()
+        compose.onNodeWithText("메모 남기기").performScrollTo().performClick()
         compose.onNodeWithText("기억할 생각이나 적용할 아이디어").performTextInput("태블릿에서도 지킬 생각")
     }
 
@@ -99,7 +104,7 @@ class AdaptiveUiFlowTest {
         compose.onNodeWithText("계속 작성").performClick()
         compose.onNodeWithTag("nav_library").performClick()
         compose.onNodeWithText("변경 버리고 나가기").performClick()
-        compose.onNodeWithText("나만의 읽기 공간").assertExists()
+        compose.onNodeWithText("내 보관함").assertExists()
         compose.onNodeWithTag("memo_editor").assertDoesNotExist()
     }
 
@@ -153,8 +158,7 @@ class AdaptiveUiFlowTest {
         waitForNotes()
         compose.onNodeWithTag("notes_list").performScrollToNode(hasText(articleTitle))
         compose.onNodeWithText(articleTitle).performClick()
-        compose.onNodeWithText("메모").performClick()
-        compose.onNodeWithText("새 메모").performClick()
+        compose.onNodeWithText("메모 남기기").performScrollTo().performClick()
         compose.onNodeWithText("기억할 생각이나 적용할 아이디어").performScrollTo().performTextInput("큰 글자 메모")
         compose.onNodeWithText("메모 저장").performScrollTo().assertIsDisplayed()
         compose.onNodeWithTag("nav_settings").performScrollTo().performClick()
@@ -164,24 +168,23 @@ class AdaptiveUiFlowTest {
     @Test fun expandedWorkspacePreservesBookmarkMemoSearchAndReminderCancel() {
         waitForNotes()
         compose.onNodeWithText(articleTitle).performClick()
-        compose.onNodeWithText("저장").performClick()
-        compose.waitUntil(10000) { compose.onAllNodesWithText("저장됨").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("북마크").performClick()
+        compose.waitUntil(10000) { compose.onAllNodesWithText("북마크됨").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("읽기 알림").performClick()
         compose.onNodeWithText("나중에 읽기").assertExists()
         compose.onNodeWithText("취소").performClick()
         compose.onNodeWithTag("reader_pane").assertExists()
-        compose.onNodeWithText("메모").performClick()
-        compose.onNodeWithText("새 메모").performClick()
+        compose.onNodeWithText("메모 남기기").performScrollTo().performClick()
         compose.onNodeWithText("기억할 생각이나 적용할 아이디어").performTextInput("태블릿 검색 검증용 생각")
         compose.onNodeWithText("메모 저장").performScrollTo().performClick()
-        compose.waitUntil(10000) { compose.onAllNodesWithText("태블릿 검색 검증용 생각").fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(10000) { compose.onAllNodesWithText("메모 수정").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("nav_library").performClick()
         compose.onNodeWithText(articleTitle).assertExists()
         compose.onNodeWithText(articleTitle).performClick()
         compose.onNodeWithTag("library_list").assertExists()
         compose.onNodeWithTag("reader_pane").assertExists()
         compose.onNodeWithContentDescription("뒤로").performClick()
-        compose.onNodeWithText("나만의 읽기 공간").assertExists()
+        compose.onNodeWithText("내 보관함").assertExists()
         compose.onNodeWithTag("reader_placeholder").assertExists()
         compose.onNodeWithTag("nav_search").performClick()
         compose.onNodeWithText("글과 메모에서 검색").performTextInput("검색 검증용")
@@ -202,8 +205,7 @@ class AdaptiveUiFlowTest {
             androidx.lifecycle.ViewModelProvider(compose.activity)[net.msalt.axnotes.ui.AxViewModel::class.java]
                 .sampleMode.value = false
         }
-        compose.onNodeWithText("내부 테스트용 콘텐츠 스냅샷").assertExists()
-        compose.onNodeWithText("연결 변경 대기", substring = true).assertExists()
+        compose.onNodeWithText("이전에 저장한 글을 표시하고 있어요.", substring = true).assertExists()
         compose.onNodeWithText("AX Notes 웹 콘텐츠").assertDoesNotExist()
     }
 

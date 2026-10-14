@@ -1,0 +1,8 @@
+{
+  "installed_apk_sha256": "df867b96d360ed4fe58f9b7e7a1608d8b0148d65501a5c4dc6b03be90bcb54c5",
+  "captures": {
+    "03-date-200-keyboard-hidden.png": "12d28c70f0982aa3e6dbe8df28e2ebe0239bca672f11ae2178f49ff47f43890f",
+    "04-date-200-keyboard-visible.png": "821bdc7b4c1e7f41acc3d53911e250e677effb17be66d1c57d53e20b1a5298b9",
+    "07-time-200-keyboard-visible.png": "27d2779f50f84b771cca14770f9f59763286bf78264fb9174071a47eeed2a27c"
+  }
+}

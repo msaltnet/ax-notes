@@ -1,1 +1,28 @@
-<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="48dp" android:height="48dp" android:viewportWidth="48" android:viewportHeight="48"><path android:fillColor="#315E50" android:pathData="M4,4h40v40h-40z"/><path android:fillColor="#FFFFFF" android:pathData="M13,12h22v3h-22zM13,21h22v3h-22zM13,30h15v3h-15z"/></vector>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <!-- Notebook cover and binding preserve the app's original note identity. -->
+    <path android:fillColor="#315E50"
+        android:pathData="M9,4H39Q44,4 44,9V39Q44,44 39,44H9Q4,44 4,39V9Q4,4 9,4Z" />
+    <path android:fillColor="#234A3E"
+        android:pathData="M9,4H12V44H9Q4,44 4,39V9Q4,4 9,4Z" />
+    <path android:fillColor="@android:color/transparent"
+        android:strokeColor="#FAF8F0"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round"
+        android:pathData="M9,12H13M9,20H13M9,28H13M9,36H13" />
+    <!-- An outlined A and X remain crisp without relying on an installed font. -->
+    <path android:fillColor="@android:color/transparent"
+        android:strokeColor="#FAF8F0"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M16,29L21,17L26,29M18,25H24M30,17L38,29M38,17L30,29" />
+    <path android:fillColor="@android:color/transparent"
+        android:strokeColor="#B3D5C3"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round"
+        android:pathData="M17,35H37" />
+</vector>

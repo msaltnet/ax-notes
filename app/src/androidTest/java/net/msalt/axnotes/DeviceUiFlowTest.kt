@@ -14,17 +14,16 @@ class DeviceUiFlowTest {
     @Test fun repeatedNavigationReturnsToStableNotesAndLibrary() {
         waitForNotes()
         repeat(3) {
-            compose.onNodeWithText("내 보관함").performClick()
-            compose.onNodeWithText("나만의 읽기 공간").assertExists()
-            compose.onNodeWithText("Notes").performClick()
+            compose.onNodeWithContentDescription("내 보관함").performClick()
+            compose.onNodeWithText("내 보관함").assertExists()
+            compose.onNodeWithContentDescription("Notes").performClick()
             compose.onNodeWithText("AX Notes 앱도 만들어볼까?").assertExists()
         }
     }
     @Test fun dirtyMemoBackCanContinueOrDiscard() {
         waitForNotes()
         compose.onNodeWithText("AX Notes 앱도 만들어볼까?").performClick()
-        compose.onNodeWithText("메모").performClick()
-        compose.onNodeWithText("새 메모").performClick()
+        compose.onNodeWithText("메모 남기기").performScrollTo().performClick()
         compose.onNodeWithText("기억할 생각이나 적용할 아이디어").performTextInput("잃으면 안 되는 생각")
         compose.activityRule.scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
         compose.onNodeWithText("저장하지 않은 메모가 있어요").assertExists()
@@ -32,7 +31,8 @@ class DeviceUiFlowTest {
         compose.onNodeWithText("잃으면 안 되는 생각").assertExists()
         compose.activityRule.scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
         compose.onNodeWithText("변경 버리고 나가기").performClick()
-        compose.onNodeWithText("글에 남긴 메모").assertExists()
+        compose.onNodeWithTag("reader_pane").assertExists()
+        compose.onNodeWithText("메모 남기기").assertExists()
     }
     @Test fun searchHasEmptyGuidanceAndLiteralNoResultState() {
         waitForNotes()
