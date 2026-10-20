@@ -4,11 +4,14 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
     id("com.google.devtools.ksp")
 }
+val previewBuild = providers.gradleProperty("axPreview").orNull == "true"
+
 android {
     namespace = "net.msalt.axnotes"
     compileSdk = 35
     defaultConfig {
         applicationId = "net.msalt.axnotes"
+        manifestPlaceholders["appLabel"] = "AX Notes"
         minSdk = 26
         targetSdk = 35
         versionCode = 3
@@ -17,7 +20,13 @@ android {
         buildConfigField("String", "MANIFEST_URL", "\"https://ax.msalt.net/app/v1/manifest.json\"")
     }
     buildTypes {
-        debug { applicationIdSuffix = ".internal" }
+        debug {
+            applicationIdSuffix = if (previewBuild) ".preview20261020" else ".internal"
+            if (previewBuild) {
+                versionNameSuffix = "-preview.20261020"
+                manifestPlaceholders["appLabel"] = "AX Notes Preview"
+            }
+        }
         release { isMinifyEnabled = false }
     }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }

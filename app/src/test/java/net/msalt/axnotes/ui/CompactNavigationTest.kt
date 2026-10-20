@@ -1,6 +1,12 @@
 package net.msalt.axnotes.ui
 
 import android.app.Application
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.PixelMap
+import kotlin.math.roundToInt
+import org.junit.Assert.assertThrows
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.material3.MaterialTheme
@@ -79,10 +85,14 @@ class CompactNavigationTest {
     private fun verifyIconOnlySelection(dark: Boolean) {
         showNavigation(dark)
         val node = compose.onNodeWithTag("nav_search")
-        val before = node.captureToImage().toPixelMap()
+        val before = captureNode(node).asImageBitmap().toPixelMap()
         // Change external state without a press, so this checks the persistent selection style.
         compose.runOnIdle { selected.value = "search" }
-        val after = node.captureToImage().toPixelMap()
+        val after = captureNode(node).asImageBitmap().toPixelMap()
+        assertIconOnlyPixels(before, after)
+    }
+
+    private fun assertIconOnlyPixels(before: PixelMap, after: PixelMap) {
         val halfIcon = 12 // AxSize.icon is 24dp; this host is mdpi.
         var changed = 0
         var primaryPixels = 0
@@ -101,6 +111,35 @@ class CompactNavigationTest {
         assertTrue("Selection must visibly change the icon", changed > 0)
         assertTrue("Selected icon uses theme primary", primaryPixels > 0)
         assertTrue("Unselected icon uses theme supporting foreground", inactivePixels > 0)
+    }
+
+    // Isolated experiment: draw the real native-rendered window after Compose idle,
+    // avoiding Compose 1.8's asynchronous redraw callback under a paused looper.
+    private fun captureNode(node: SemanticsNodeInteraction): Bitmap {
+        val bounds = node.fetchSemanticsNode().boundsInWindow
+        return compose.runOnIdle {
+            val view = host.get().window.decorView
+            val location = IntArray(2)
+            view.getLocationInWindow(location)
+            val full = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
+            view.draw(Canvas(full))
+            Bitmap.createBitmap(full, bounds.left.roundToInt() - location[0],
+                bounds.top.roundToInt() - location[1], bounds.width.roundToInt(), bounds.height.roundToInt())
+        }
+    }
+
+    @Test fun forbiddenBackgroundPixelIsRejected() {
+        showNavigation()
+        val node = compose.onNodeWithTag("nav_search")
+        val before = captureNode(node).asImageBitmap().toPixelMap()
+        compose.runOnIdle { selected.value = "search" }
+        val after = captureNode(node)
+        assertIconOnlyPixels(before, after.asImageBitmap().toPixelMap())
+        // Negative control outside the icon: a forbidden tile/dot pixel must fail.
+        after.setPixel(0, 0, android.graphics.Color.MAGENTA)
+        assertThrows(AssertionError::class.java) {
+            assertIconOnlyPixels(before, after.asImageBitmap().toPixelMap())
+        }
     }
 
     private fun showNavigation(dark: Boolean = false) {
