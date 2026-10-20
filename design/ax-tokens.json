@@ -141,6 +141,14 @@
       "onErrorContainer": {
         "$type": "color",
         "$value": "#410e0b"
+      },
+      "navigationSelectedIcon": {
+        "$type": "color",
+        "$value": "#173b13"
+      },
+      "navigationUnselectedIcon": {
+        "$type": "color",
+        "$value": "#7c817a"
       }
     },
     "dark": {
@@ -283,6 +291,14 @@
       "onErrorContainer": {
         "$type": "color",
         "$value": "#f9dedc"
+      },
+      "navigationSelectedIcon": {
+        "$type": "color",
+        "$value": "#d1dcb7"
+      },
+      "navigationUnselectedIcon": {
+        "$type": "color",
+        "$value": "#6b7566"
       }
     }
   },

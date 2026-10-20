@@ -36,6 +36,19 @@ def export():
         tokens["color"][mode] = colors
         assert len(tokens["color"][mode]) >= 30, f"incomplete {mode} palette"
 
+    for mode, name in (("light", "AxLightNavigationColors"), ("dark", "AxDarkNavigationColors")):
+        block = re.search(rf"internal val {name} = AxNavigationColors\((.*?)\n\)", source, re.S)
+        assert block, name
+        for line in block[1].splitlines():
+            line = line.split("//", 1)[0].strip()
+            if not line:
+                continue
+            match = re.fullmatch(r"(selectedIcon|unselectedIcon) = Color\(0xFF([0-9A-Fa-f]{6})\),?", line)
+            if not match:
+                raise ValueError(f"Unsupported navigation color declaration: {line}")
+            role, color = match.groups()
+            tokens["color"][mode]["navigation" + role[0].upper() + role[1:]] = {"$type": "color", "$value": "#" + color.lower()}
+
     dimensions = {}
     for name in ("AxSpacing", "AxSize", "AxComponentTokens"):
         block = re.search(rf"object {name} \{{(.*?)\n\}}", source, re.S)

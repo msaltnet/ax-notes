@@ -8,6 +8,8 @@ import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
@@ -127,6 +129,19 @@ internal val AxDarkColors = darkColorScheme(
     onErrorContainer = Color(0xFFF9DEDC)
 )
 
+/** Bottom navigation must distinguish states by luminance, not just a similar green hue. */
+internal data class AxNavigationColors(val selectedIcon: Color, val unselectedIcon: Color)
+
+internal val AxLightNavigationColors = AxNavigationColors(
+    selectedIcon = Color(0xFF173B13),
+    unselectedIcon = Color(0xFF7C817A)
+)
+internal val AxDarkNavigationColors = AxNavigationColors(
+    selectedIcon = Color(0xFFD1DCB7),
+    unselectedIcon = Color(0xFF6B7566)
+)
+internal val LocalAxNavigationColors = staticCompositionLocalOf { AxLightNavigationColors }
+
 /** Unmodified OFL assets match ax.msalt.net and remain available offline. */
 internal val AxEditorialFont = FontFamily(Font(R.font.noto_serif_kr_semibold, FontWeight.SemiBold))
 internal val AxUiFont = FontFamily(
@@ -180,6 +195,11 @@ fun AxTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () 
         colorScheme = if (darkTheme) AxDarkColors else AxLightColors,
         typography = AxTypography,
         shapes = AxShapes,
-        content = content
+        content = {
+            CompositionLocalProvider(
+                LocalAxNavigationColors provides if (darkTheme) AxDarkNavigationColors else AxLightNavigationColors,
+                content = content
+            )
+        }
     )
 }

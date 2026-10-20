@@ -59,6 +59,12 @@ class DesignTokenExportTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "color declaration"):
             self.mutated_export("AxDesignSystem.kt", "primary = Color(0xFF40563B)", "primary = Color.Green")
 
+    def test_navigation_colors_are_exported_and_checked(self):
+        result = self.mutated_export("AxDesignSystem.kt", "selectedIcon = Color(0xFF173B13)", "selectedIcon = Color(0xFF000000)")
+        self.assertEqual("#000000", result["color"]["light"]["navigationSelectedIcon"]["$value"])
+        with self.assertRaisesRegex(ValueError, "navigation color declaration"):
+            self.mutated_export("AxDesignSystem.kt", "unselectedIcon = Color(0xFF7C817A)", "unselectedIcon = Color.Gray")
+
     def test_dimension_division_cannot_be_mistaken_for_a_comment(self):
         with self.assertRaisesRegex(ValueError, "token expression"):
             self.mutated_export("AxDesignSystem.kt", "val icon = 24.dp", "val icon = 24.dp / 2")

@@ -1,0 +1,39 @@
+name: Android checks
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          # Test the actual PR head, rather than only GitHub's synthetic merge commit.
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install Android build components
+        run: '"$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-35" "build-tools;35.0.0"'
+      - name: Verify design token handoff
+        run: |
+          python3 scripts/export-design-tokens.py --check
+          python3 -m unittest discover -s scripts -p 'test_*.py'
+      - name: Run all Android tests
+        run: bash gradlew --no-daemon --no-parallel --max-workers=2 testDebugUnitTest
+      - name: Lint and compile APKs
+        run: bash gradlew --no-daemon --no-parallel --max-workers=2 lintDebug assembleDebug assembleDebugAndroidTest compileReleaseKotlin
