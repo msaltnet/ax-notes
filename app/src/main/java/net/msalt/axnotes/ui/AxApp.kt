@@ -489,6 +489,7 @@ private fun ReaderPlaceholder() {
 @Composable
 internal fun CompactNavigation(selected: String, onSelect: (String) -> Unit) {
     val colors = MaterialTheme.colorScheme
+    val navigationColors = LocalAxNavigationColors.current
     Surface(color = colors.surface) {
         Column {
             HorizontalDivider()
@@ -504,7 +505,7 @@ internal fun CompactNavigation(selected: String, onSelect: (String) -> Unit) {
                         onClick = { onSelect(route) }
                     )
                         .semantics { contentDescription = label }.testTag("nav_$route"), contentAlignment = Alignment.Center) {
-                        val tint = if (selected == route) colors.primary else colors.onSurfaceVariant
+                        val tint = if (selected == route) navigationColors.selectedIcon else navigationColors.unselectedIcon
                         Box(Modifier.size(AxSize.minTouch).clip(CircleShape)
                             // Unbounded ripples start at the center, even for taps at the tab edge.
                             // The circle clips press, keyboard-focus and hover feedback alike.
