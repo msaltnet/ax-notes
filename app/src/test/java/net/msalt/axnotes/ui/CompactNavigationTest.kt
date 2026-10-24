@@ -172,8 +172,8 @@ class CompactNavigationTest {
 
     @Test fun initialRestoredSelectionStartsAtDestinationWithoutIntroAnimation() {
         selected.value = "settings"
-        showNavigation()
         compose.mainClock.autoAdvance = false
+        showNavigation()
         compose.onNodeWithTag("nav_settings").assertIsSelected()
         val pixels = captureNode(compose.onNodeWithTag("nav_settings")).asImageBitmap().toPixelMap()
         assertEquals(active, pixels[pixels.width / 2, pixels.height - 7])
@@ -181,7 +181,9 @@ class CompactNavigationTest {
     }
 
     @Test fun interruptedTransitionsSettleOnNewestDestination() {
+        selected.value = "settings"
         showNavigation()
+        val expected = captureNode(compose.onNodeWithTag("bottom_navigation")).asImageBitmap().toPixelMap()
         compose.mainClock.autoAdvance = false
         listOf("settings", "library", "search", "notes", "settings").forEach { route ->
             compose.runOnIdle { selected.value = route }
@@ -190,6 +192,10 @@ class CompactNavigationTest {
         compose.mainClock.advanceTimeBy(2000)
         compose.mainClock.autoAdvance = true
         compose.onNodeWithTag("nav_settings").assertIsSelected()
+        val settled = captureNode(compose.onNodeWithTag("bottom_navigation")).asImageBitmap().toPixelMap()
+        for (y in 0 until expected.height) for (x in 0 until expected.width) {
+            assertEquals("Interrupted pulse and underline settle exactly", expected[x, y], settled[x, y])
+        }
         listOf("notes", "library", "search", "settings").forEach { route ->
             val pixels = captureNode(compose.onNodeWithTag("nav_$route")).asImageBitmap().toPixelMap()
             assertEquals("Only final destination has underline", if (route == "settings") active else surface,
