@@ -486,44 +486,6 @@ private fun ReaderPlaceholder() {
     }
 }
 
-@Composable
-internal fun CompactNavigation(selected: String, onSelect: (String) -> Unit) {
-    val colors = MaterialTheme.colorScheme
-    val navigationColors = LocalAxNavigationColors.current
-    Surface(color = colors.surface) {
-        Column {
-            HorizontalDivider()
-            Row(Modifier.fillMaxWidth().navigationBarsPadding().height(AxSize.bottomNavigation).selectableGroup().testTag("bottom_navigation"), verticalAlignment = Alignment.CenterVertically) {
-                listOf("notes" to "Notes", "library" to "내 보관함", "search" to "검색", "settings" to "설정").forEach { (route, label) ->
-                    val interactionSource = remember { MutableInteractionSource() }
-                    // Keep the whole destination tappable; draw feedback only around its icon.
-                    Box(Modifier.weight(1f).fillMaxHeight().selectable(
-                        selected = selected == route,
-                        interactionSource = interactionSource,
-                        indication = null,
-                        role = Role.Tab,
-                        onClick = { onSelect(route) }
-                    )
-                        .semantics { contentDescription = label }.testTag("nav_$route"), contentAlignment = Alignment.Center) {
-                        val tint = if (selected == route) navigationColors.selectedIcon else navigationColors.unselectedIcon
-                        Box(Modifier.size(AxSize.minTouch).clip(CircleShape)
-                            // Unbounded ripples start at the center, even for taps at the tab edge.
-                            // The circle clips press, keyboard-focus and hover feedback alike.
-                            .indication(interactionSource, ripple(bounded = false, radius = AxSize.minTouch / 2, color = colors.primary)),
-                            contentAlignment = Alignment.Center) {
-                        when(route) {
-                            "notes" -> Icon(painterResource(R.drawable.ic_article), null, Modifier.size(AxSize.icon), tint = tint)
-                            "library" -> Icon(painterResource(R.drawable.ic_library), null, Modifier.size(AxSize.icon), tint = tint)
-                            "search" -> Icon(Icons.Default.Search, null, Modifier.size(AxSize.icon), tint = tint)
-                            else -> Icon(Icons.Default.Settings, null, Modifier.size(AxSize.icon), tint = tint)
-                        }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
 
 private data class ReaderArticleLoad(val article: Article?, val ready: Boolean)
 

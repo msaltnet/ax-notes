@@ -79,11 +79,11 @@ class CompactNavigationTest {
         compose.runOnIdle { assertTrue(clicks.isEmpty()) }
     }
 
-    @Test fun lightSelectionChangesOnlyIconPixels() = verifyIconOnlySelection(dark = false)
+    @Test fun lightSelectionAddsUnderlineWithoutTile() = verifyIconAndUnderlineSelection(dark = false)
 
-    @Test fun darkSelectionChangesOnlyIconPixels() = verifyIconOnlySelection(dark = true)
+    @Test fun darkSelectionAddsUnderlineWithoutTile() = verifyIconAndUnderlineSelection(dark = true)
 
-    private fun verifyIconOnlySelection(dark: Boolean) {
+    private fun verifyIconAndUnderlineSelection(dark: Boolean) {
         showNavigation(dark)
         listOf("notes", "library", "search", "settings").forEach { route ->
             val other = if (route == "notes") "library" else "notes"
@@ -93,7 +93,7 @@ class CompactNavigationTest {
             // External state avoids transient press feedback in persistent-style assertions.
             compose.runOnIdle { selected.value = route }
             val after = captureNode(node).asImageBitmap().toPixelMap()
-            assertIconOnlyPixels(before, after)
+            assertIconAndUnderlinePixels(before, after)
             // Save actual native-rendered pixels as local visual-review evidence.
             val screenshot = captureNode(compose.onNodeWithTag("bottom_navigation"))
             val file = java.io.File("build/navigation-screenshots/${if (dark) "dark" else "light"}-$route.png")
@@ -107,7 +107,7 @@ class CompactNavigationTest {
         }
     }
 
-    private fun assertIconOnlyPixels(before: PixelMap, after: PixelMap) {
+    private fun assertIconAndUnderlinePixels(before: PixelMap, after: PixelMap) {
         assertTrue("Selected and unselected icons need 3:1 luminance contrast", contrast(active, inactive) >= 3f)
         assertTrue("Selected icon must contrast with surface", contrast(active, surface) >= 3f)
         assertTrue("Unselected icon must remain readable", contrast(inactive, surface) >= 3f)
@@ -115,19 +115,24 @@ class CompactNavigationTest {
         var changed = 0
         var activePixels = 0
         var inactivePixels = 0
+        var underlinePixels = 0
         for (y in 0 until after.height) for (x in 0 until after.width) {
             val inIcon = x >= after.width / 2 - halfIcon && x < after.width / 2 + halfIcon &&
                 y >= after.height / 2 - halfIcon && y < after.height / 2 + halfIcon
-            if (!inIcon) {
+            val inUnderline = x >= after.width / 2 - 9 && x < after.width / 2 + 9 &&
+                y >= after.height - 8 && y < after.height - 5
+            if (!inIcon && !inUnderline) {
                 assertEquals("No selected tile at ($x, $y)", surface, after[x, y])
                 assertEquals(before[x, y], after[x, y])
             }
             if (before[x, y] != after[x, y]) changed++
             if (after[x, y] == active) activePixels++
+            if (inUnderline && after[x, y] == active) underlinePixels++
             if (before[x, y] == inactive) inactivePixels++
         }
         assertTrue("Selection must visibly change the icon", changed > 0)
-        assertTrue("Selected icon uses navigation selected token", activePixels > 0)
+        assertTrue("Selected icon uses navigation selected token", activePixels > underlinePixels)
+        assertTrue("Selected destination has a visible non-color underline", underlinePixels >= 30)
         assertTrue("Unselected icon uses navigation unselected token", inactivePixels > 0)
     }
 
@@ -152,11 +157,38 @@ class CompactNavigationTest {
         val before = captureNode(node).asImageBitmap().toPixelMap()
         compose.runOnIdle { selected.value = "search" }
         val after = captureNode(node)
-        assertIconOnlyPixels(before, after.asImageBitmap().toPixelMap())
+        assertIconAndUnderlinePixels(before, after.asImageBitmap().toPixelMap())
         // Negative control outside the icon: a forbidden tile/dot pixel must fail.
         after.setPixel(0, 0, android.graphics.Color.MAGENTA)
         assertThrows(AssertionError::class.java) {
-            assertIconOnlyPixels(before, after.asImageBitmap().toPixelMap())
+            assertIconAndUnderlinePixels(before, after.asImageBitmap().toPixelMap())
+        }
+    }
+
+    @Test fun initialRestoredSelectionStartsAtDestinationWithoutIntroAnimation() {
+        selected.value = "settings"
+        showNavigation()
+        compose.mainClock.autoAdvance = false
+        compose.onNodeWithTag("nav_settings").assertIsSelected()
+        val pixels = captureNode(compose.onNodeWithTag("nav_settings")).asImageBitmap().toPixelMap()
+        assertEquals(active, pixels[pixels.width / 2, pixels.height - 7])
+        compose.mainClock.autoAdvance = true
+    }
+
+    @Test fun interruptedTransitionsSettleOnNewestDestination() {
+        showNavigation()
+        compose.mainClock.autoAdvance = false
+        listOf("settings", "library", "search", "notes", "settings").forEach { route ->
+            compose.runOnIdle { selected.value = route }
+            compose.mainClock.advanceTimeBy(48)
+        }
+        compose.mainClock.advanceTimeBy(2000)
+        compose.mainClock.autoAdvance = true
+        compose.onNodeWithTag("nav_settings").assertIsSelected()
+        listOf("notes", "library", "search", "settings").forEach { route ->
+            val pixels = captureNode(compose.onNodeWithTag("nav_$route")).asImageBitmap().toPixelMap()
+            assertEquals("Only final destination has underline", if (route == "settings") active else surface,
+                pixels[pixels.width / 2, pixels.height - 7])
         }
     }
 
