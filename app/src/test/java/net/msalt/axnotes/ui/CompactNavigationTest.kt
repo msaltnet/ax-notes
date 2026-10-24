@@ -11,6 +11,11 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toPixelMap
@@ -192,14 +197,28 @@ class CompactNavigationTest {
         }
     }
 
+    @Test fun rtlLargeFontKeepsUnderlineOnSelectedTabAndTouchSize() {
+        showNavigation(dark = true, rtl = true, fontScale = 2f)
+        listOf("settings", "search", "library", "notes").forEach { route ->
+            compose.runOnIdle { selected.value = route }
+            val node = compose.onNodeWithTag("nav_$route")
+            node.assertIsSelected().assertHeightIsAtLeast(AxSize.minTouch)
+                .assertWidthIsAtLeast(AxSize.minTouch)
+            val pixels = captureNode(node).asImageBitmap().toPixelMap()
+            assertEquals(active, pixels[pixels.width / 2, pixels.height - 7])
+        }
+    }
+
     private fun contrast(first: Color, second: Color): Float {
         val a = first.luminance()
         val b = second.luminance()
         return (maxOf(a, b) + 0.05f) / (minOf(a, b) + 0.05f)
     }
 
-    private fun showNavigation(dark: Boolean = false) {
+    private fun showNavigation(dark: Boolean = false, rtl: Boolean = false, fontScale: Float = 1f) {
         host.get().setContent {
+            CompositionLocalProvider(LocalLayoutDirection provides (if (rtl) LayoutDirection.Rtl else LayoutDirection.Ltr),
+                LocalDensity provides Density(LocalDensity.current.density, fontScale)) {
             AxTheme(darkTheme = dark) {
                 surface = MaterialTheme.colorScheme.surface
                 active = LocalAxNavigationColors.current.selectedIcon
@@ -208,6 +227,7 @@ class CompactNavigationTest {
                     clicks += route
                     selected.value = route
                 }
+            }
             }
         }
         compose.waitForIdle()
