@@ -254,6 +254,7 @@ fun AxApp(target: MutableStateFlow<String?>, vm: AxViewModel = viewModel()) {
                             Text("버전 ${BuildConfig.VERSION_NAME}", style = MaterialTheme.typography.bodyMedium)
                             Text("악소리 나는 AX 경험담. AI와 Agent가 실제 일에 들어올 때 생기는 변화와 질문을 기록합니다.", style = MaterialTheme.typography.bodyMedium)
                             AxOutlinedButton(onClick = { openExternal(context, feed?.aboutUrl ?: "https://ax.msalt.net/about/") { vm.message.value = it } }) { Text("채널 소개") }
+                            AxTextButton(onClick = { openExternal(context, "https://ax.msalt.net/app-privacy/") { vm.message.value = it } }) { Text("개인정보처리방침") }
                             feed?.let { f -> val channels = org.json.JSONArray(f.channelsJson); for(i in 0 until channels.length()) {
                                 val channel = channels.getJSONObject(i)
                                 AxTextButton(onClick = { openExternal(context, channel.getString("url")) { vm.message.value = it } }) { Text(channel.getString("label")) }

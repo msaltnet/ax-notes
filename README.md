@@ -69,7 +69,7 @@ MVP 이후에는 Labs 소개와 실행 진입점을 추가합니다.
 ## Android 개발
 
 - `app/`: 새로 추가한 Android 앱 모듈 (Kotlin, Compose, Room, WorkManager)
-- 최소 API 26, compile/target API 35, JDK 17 이상
+- 최소 API 26, compile/target API 36, JDK 17 이상
 - Android SDK 설치 후 `local.properties`에 SDK 경로를 설정하거나 ANDROID_HOME을 지정합니다
 - `./gradlew testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest`
 - 내부 APK: `app/build/outputs/apk/debug/app-debug.apk`
@@ -78,5 +78,19 @@ MVP 이후에는 Labs 소개와 실행 진입점을 추가합니다.
 - 창 너비에 따라 하단 탐색·탐색 레일·목록/본문 분할 화면을 사용합니다. [태블릿 설계](docs/ADAPTIVE_DESIGN.md)를 확인하세요.
 - 앱을 삭제하거나 데이터를 초기화하면 개인 기록을 복구할 수 없습니다
 - SDK·Gradle 캐시, 빌드 산출물과 서명 키를 저장소에 넣지 않습니다
+
+### Google Play 업로드용 빌드
+
+서명 설정은 저장소 밖의 `~/.msalt-net-key/android-signing.properties`에서 읽습니다.
+다른 경로는 `AX_NOTES_SIGNING_PROPERTIES` 환경 변수로 지정합니다.
+파일에는 `storeFile`, `storePassword`, `keyAlias`, `keyPassword`를 설정하며,
+Windows의 `storeFile`은 `C:/.../play.jks`처럼 `/`를 사용합니다.
+키 파일과 비밀번호는 Git이나 빌드 로그에 남기지 않습니다.
+
+`./gradlew bundleRelease lintRelease testDebugUnitTest`로 검증·빌드합니다.
+결과는 `app/build/outputs/bundle/release/app-release.aab`이며,
+출시 패키지는 `net.msalt.axnotes`입니다. 내부 테스트용 `.internal` 앱과 별개입니다.
+서명 설정이 없으면 release 빌드가 실패하며 debug 빌드에는 필요하지 않습니다.
+API 36 빌드 성공은 Android 16 실기기 동작 검증이나 Play 심사 통과를 의미하지 않습니다.
 
 구현 결정: [계획](docs/IMPLEMENTATION_PLAN.md), [개발 과정 기록](docs/DECISION_LOG.md), [검증 결과](docs/TEST_REPORT.md)

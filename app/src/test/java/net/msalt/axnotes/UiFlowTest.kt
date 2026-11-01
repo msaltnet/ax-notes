@@ -54,6 +54,17 @@ class UiFlowTest {
             compose.onNodeWithText("AX Notes 앱도 만들어볼까?").assertExists()
         }
     }
+    @Test fun settingsOpensPublicPrivacyPolicy() {
+        waitForNotes()
+        compose.onNodeWithContentDescription("설정").performClick()
+        compose.onNodeWithTag("settings_list").performScrollToNode(hasText("개인정보처리방침"))
+        compose.onNodeWithText("개인정보처리방침").performClick()
+        compose.runOnIdle {
+            val intent = org.robolectric.Shadows.shadowOf(compose.activity).nextStartedActivity
+            org.junit.Assert.assertEquals(android.content.Intent.ACTION_VIEW, intent.action)
+            org.junit.Assert.assertEquals("https://ax.msalt.net/app-privacy/", intent.dataString)
+        }
+    }
     @Test fun dirtyMemoBackCanContinueOrDiscard() {
         waitForNotes()
         compose.onNodeWithText("AX Notes 앱도 만들어볼까?").performClick()

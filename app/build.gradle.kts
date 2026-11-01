@@ -1,30 +1,61 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
     id("com.google.devtools.ksp")
 }
+
+// Credentials stay outside the repository. Override the path for CI/other machines.
+val signingPropertiesFile = file(
+    providers.environmentVariable("AX_NOTES_SIGNING_PROPERTIES")
+        .getOrElse("${System.getProperty("user.home")}/.msalt-net-key/android-signing.properties")
+)
+val releaseSigningProperties = Properties().apply {
+    if (signingPropertiesFile.isFile) signingPropertiesFile.inputStream().use { load(it) }
+}
+
 android {
     namespace = "net.msalt.axnotes"
-    compileSdk = 35
+    compileSdk = 36
     defaultConfig {
         applicationId = "net.msalt.axnotes"
         minSdk = 26
-        targetSdk = 35
-        versionCode = 3
+        targetSdk = 36
+        versionCode = 4
         versionName = "0.3.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "MANIFEST_URL", "\"https://ax.msalt.net/app/v1/manifest.json\"")
     }
+    signingConfigs {
+        create("release") {
+            releaseSigningProperties.getProperty("storeFile")?.let { storeFile = file(it) }
+            storePassword = releaseSigningProperties.getProperty("storePassword")
+            keyAlias = releaseSigningProperties.getProperty("keyAlias")
+            keyPassword = releaseSigningProperties.getProperty("keyPassword")
+        }
+    }
     buildTypes {
         debug { applicationIdSuffix = ".internal" }
-        release { isMinifyEnabled = false }
+        release {
+            isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
+        }
     }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
     kotlinOptions { jvmTarget = "17" }
     buildFeatures { compose = true; buildConfig = true }
     testOptions { unitTests.isIncludeAndroidResources = true }
     packaging { resources.excludes += "/META-INF/{AL2.0,LGPL2.1}" }
+}
+tasks.matching { it.name == "validateSigningRelease" }.configureEach {
+    doFirst {
+        check(signingPropertiesFile.isFile) { "Set AX_NOTES_SIGNING_PROPERTIES to an external signing properties file." }
+        check(listOf("storeFile", "storePassword", "keyAlias", "keyPassword").all {
+            !releaseSigningProperties.getProperty(it).isNullOrBlank()
+        }) { "Signing properties must contain storeFile, storePassword, keyAlias and keyPassword." }
+    }
 }
 ksp { arg("room.schemaLocation", "$projectDir/schemas") }
 dependencies {

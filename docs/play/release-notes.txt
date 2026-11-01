@@ -1,0 +1,6 @@
+<en-US>
+Early AX Notes beta: read AI stories, bookmark articles, write notes, search, and set reading reminders. Personal records stay on your device.
+</en-US>
+<ko-KR>
+AX Notes 첫 비공개 베타입니다. AI 활용 글 읽기, 북마크, 메모, 검색, 읽기 알림을 사용해 보세요. 개인 기록은 기기에 저장됩니다.
+</ko-KR>

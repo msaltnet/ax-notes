@@ -1,0 +1,45 @@
+package: net.msalt.axnotes
+
+<ko-KR>
+title: AX Notes
+short_description: AI를 직접 써보고 만드는 기록. 글을 읽고 북마크와 메모로 생각을 남기세요.
+full_description: AI를 일과 생활에 적용하면서 배우고, 실험하고, 만드는 과정을 AX Notes에서 읽어보세요.
+
+직접 해본 경험과 시행착오를 담은 글을 읽고, 시리즈와 프로젝트를 따라가며 관심 있는 주제를 탐색할 수 있습니다.
+
+• 글 읽기: AI 활용 경험과 개발·제작 과정을 읽어보세요.
+• 시리즈와 프로젝트: 연결된 글과 프로젝트의 진행 과정을 찾아보세요.
+• 북마크: 다시 보고 싶은 글을 보관하세요.
+• 메모: 글을 읽으며 떠오른 생각을 남기고 다시 찾아보세요.
+• 검색: 글과 개인 메모에서 필요한 내용을 찾아보세요.
+• 읽기 알림: 나중에 읽을 시간을 정해 알림을 받아보세요.
+• 저장된 본문: 기기에 내려받은 본문은 오프라인에서도 읽을 수 있습니다. 이미지와 외부 링크에는 인터넷 연결이 필요할 수 있습니다.
+
+로그인과 결제 없이 이용할 수 있으며, 현재 앱에는 광고가 없습니다.
+북마크·메모·읽기 알림은 기기에 저장됩니다. 계정 동기화와 백업은 제공하지 않으며, 앱을 삭제하거나 데이터를 초기화하면 개인 기록을 복구할 수 없습니다.
+알림은 기기 설정과 배터리 관리에 따라 지연될 수 있습니다.
+
+이 버전은 초기 테스트 버전입니다. 사용 중 발견한 문제나 의견은 msalt.net.help@gmail.com으로 보내주세요.
+</ko-KR>
+
+<en-US>
+title: AX Notes
+short_description: Read hands-on AI stories. Save articles, write notes, and revisit your ideas.
+full_description: Explore hands-on experiences of using AI at work and in everyday life with AX Notes.
+
+Read experiments, lessons learned, and the process of building real projects. Follow related articles through series and projects.
+
+• Read articles about practical AI use and building software.
+• Explore related stories through series and projects.
+• Bookmark articles you want to revisit.
+• Write personal notes linked to articles.
+• Search articles and your notes.
+• Set reminders to read later.
+• Read downloaded article text offline. Images and external links may require an internet connection.
+
+No login or payment is required. The current app contains no ads.
+Bookmarks, notes, and reading reminders stay on your device. Account sync and backup are not available. Uninstalling the app or clearing its data permanently removes your personal records.
+Reminders may be delayed by device settings and battery management.
+
+This is an early test version. Send feedback or report issues to msalt.net.help@gmail.com.
+</en-US>
